@@ -1,0 +1,315 @@
+<UserControl x:Class="SpaceLens.Views.ExplorerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:SpaceLens.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:ExplorerViewModel}">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="0.37*" MinWidth="210" MaxWidth="440" />
+      <ColumnDefinition Width="14" />
+      <ColumnDefinition Width="*" MinWidth="360" />
+    </Grid.ColumnDefinitions>
+
+    <!-- Folder hierarchy -->
+    <Border Style="{StaticResource Card}" Padding="0">
+      <DockPanel>
+        <Grid DockPanel.Dock="Top" Margin="18,14,10,8">
+          <TextBlock Text="Folders" Style="{StaticResource Text.Section}" VerticalAlignment="Center" />
+          <Button Content="&#xE721;"
+                  Style="{StaticResource Button.Icon}"
+                  HorizontalAlignment="Right"
+                  ToolTip="Search (Ctrl+F)"
+                  Command="{Binding FocusSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+        </Grid>
+        <TreeView x:Name="FolderTree"
+                  ItemsSource="{Binding Tree.Roots}"
+                  Margin="8,0,6,8"
+                  SelectedItemChanged="OnTreeSelectionChanged"
+                  TreeViewItem.Selected="OnTreeItemSelected"
+                  AutomationProperties.AutomationId="FolderTree">
+          <TreeView.ItemContainerStyle>
+            <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+              <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+              <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+            </Style>
+          </TreeView.ItemContainerStyle>
+          <TreeView.ItemTemplate>
+            <HierarchicalDataTemplate DataType="{x:Type vm:FolderTreeItemViewModel}" ItemsSource="{Binding Children}">
+              <Grid Background="Transparent" ToolTip="{Binding Folder.FullPath}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ContentControl Content="{Binding Icon}" ContentTemplate="{StaticResource NodeIconTemplate}" Focusable="False" />
+                <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="10,0,10,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding SizeText}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" />
+                <Grid.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="Reveal in File Explorer" Click="OnTreeReveal" />
+                    <MenuItem Header="Ask AI about this folder" Click="OnTreeAsk" />
+                  </ContextMenu>
+                </Grid.ContextMenu>
+              </Grid>
+            </HierarchicalDataTemplate>
+          </TreeView.ItemTemplate>
+        </TreeView>
+      </DockPanel>
+    </Border>
+
+    <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" ResizeBehavior="PreviousAndNext" Cursor="SizeWE" />
+
+    <!-- Items in the current folder, or search results -->
+    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Breadcrumbs / results header -->
+        <Grid Margin="16,10,10,6" MinHeight="40">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+
+          <DockPanel Visibility="{Binding IsFolderMode, Converter={StaticResource BoolToVisibility}}" Margin="0,0,12,0" ClipToBounds="True">
+            <Button DockPanel.Dock="Left" Content="&#xE74A;" Style="{StaticResource Button.Icon}" Command="{Binding GoUpCommand}" ToolTip="Up one level" Margin="0,0,4,0"
+                    Visibility="{Binding CanGoUp, Converter={StaticResource BoolToVisibility}}" />
+            <ContentControl DockPanel.Dock="Left" ContentTemplate="{StaticResource FolderShape}" Width="22" Height="18" Margin="4,0,6,0" Focusable="False" />
+            <ScrollViewer x:Name="BreadcrumbScroller" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center">
+            <ItemsControl ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center" AutomationProperties.AutomationId="Breadcrumbs" SizeChanged="OnBreadcrumbsSizeChanged">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:Breadcrumb}">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="Separator" Text="&#xE76C;" Style="{StaticResource Text.Glyph}" FontSize="9" Foreground="{StaticResource TextTertiaryBrush}" Margin="4,1,4,0" />
+                    <Button Content="{Binding Name}"
+                            Style="{StaticResource Button.Ghost}"
+                            Padding="6,4"
+                            FontSize="14"
+                            Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding Folder}"
+                            ToolTip="{Binding Folder.FullPath}" />
+                  </StackPanel>
+                  <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                      <Setter TargetName="Separator" Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                  </DataTemplate.Triggers>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsFolderMode, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
+            <Button Content="&#xE72B;" Style="{StaticResource Button.Icon}" Command="{Binding ExitResultsCommand}" ToolTip="Back to the folder" />
+            <TextBlock Text="{Binding ListTitle}" Style="{StaticResource Text.Section}" Margin="8,0,12,0" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding ListCaption}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+          </StackPanel>
+
+          <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <ComboBox ItemsSource="{Binding Table.Filters}"
+                      SelectedItem="{Binding Table.Filter}"
+                      DisplayMemberPath="Label"
+                      Width="156"
+                      Height="34"
+                      ToolTip="Show only some items"
+                      AutomationProperties.AutomationId="ItemFilter" />
+            <Button Content="&#xE712;" Style="{StaticResource Button.Icon}" Margin="6,0,0,0" ToolTip="Folder actions" Click="OnFolderMenu">
+              <Button.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Show the largest files in this folder" Command="{Binding ShowLargestFilesCommand}" />
+                  <MenuItem Header="Ask AI about this folder" Command="{Binding AskAboutCommand}" />
+                  <Separator />
+                  <MenuItem Header="Reveal in File Explorer" Command="{Binding RevealCommand}" />
+                  <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" />
+                </ContextMenu>
+              </Button.ContextMenu>
+            </Button>
+          </StackPanel>
+        </Grid>
+
+        <!-- Selection bar -->
+        <Border Grid.Row="1" Margin="12,0,12,8" Padding="14,8" CornerRadius="10" Background="#132A47" BorderBrush="{StaticResource SelectionBorderBrush}" BorderThickness="1"
+                Visibility="{Binding Table.HasChecked, Converter={StaticResource BoolToVisibility}}">
+          <Grid>
+            <TextBlock Text="{Binding Table.CheckedText}" VerticalAlignment="Center" FontWeight="SemiBold" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+              <Button Content="Clear" Style="{StaticResource Button.Ghost}" Command="{Binding Table.ClearChecksCommand}" />
+              <Button Style="{StaticResource Button.Primary}" Margin="8,0,0,0" Padding="14,6" Command="{Binding RecycleCheckedCommand}" AutomationProperties.AutomationId="RecycleSelected">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="&#xE74D;" Style="{StaticResource Text.Glyph}" FontSize="13" />
+                  <TextBlock Text="Move to Recycle Bin…" Margin="8,0,0,0" />
+                </StackPanel>
+              </Button>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <DataGrid x:Name="ItemsGrid"
+                  Grid.Row="2"
+                  Margin="6,0"
+                  ItemsSource="{Binding Table.Rows}"
+                  SelectedItem="{Binding Table.Selected}"
+                  Sorting="OnSorting"
+                  MouseDoubleClick="OnRowDoubleClick"
+                  PreviewMouseRightButtonDown="OnRowRightClick"
+                  SizeChanged="OnGridSizeChanged"
+                  AutomationProperties.AutomationId="ItemsGrid">
+          <DataGrid.ContextMenu>
+            <ContextMenu>
+              <MenuItem Header="Open" Command="{Binding OpenCommand}" CommandParameter="{Binding Table.Selected}">
+                <MenuItem.Icon>
+                  <TextBlock Text="&#xE838;" />
+                </MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="Reveal in File Explorer" Command="{Binding RevealCommand}" CommandParameter="{Binding Table.Selected}">
+                <MenuItem.Icon>
+                  <TextBlock Text="&#xE8A7;" />
+                </MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" CommandParameter="{Binding Table.Selected}">
+                <MenuItem.Icon>
+                  <TextBlock Text="&#xE8C8;" />
+                </MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="Ask AI about this" Command="{Binding AskAboutCommand}" CommandParameter="{Binding Table.Selected}">
+                <MenuItem.Icon>
+                  <TextBlock Text="&#xE99A;" />
+                </MenuItem.Icon>
+              </MenuItem>
+              <Separator />
+              <MenuItem Header="Move to Recycle Bin…" Command="{Binding RecycleCommand}" CommandParameter="{Binding Table.Selected}">
+                <MenuItem.Icon>
+                  <TextBlock Text="&#xE74D;" />
+                </MenuItem.Icon>
+              </MenuItem>
+            </ContextMenu>
+          </DataGrid.ContextMenu>
+          <DataGrid.Columns>
+            <DataGridTemplateColumn Width="40" CanUserSort="False" CanUserResize="False">
+              <DataGridTemplateColumn.Header>
+                <CheckBox IsChecked="{Binding DataContext.Table.AreAllChecked, RelativeSource={RelativeSource AncestorType=DataGrid}}" ToolTip="Select every item that can be removed" />
+              </DataGridTemplateColumn.Header>
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                  <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}"
+                            IsEnabled="{Binding CanRemove}"
+                            ToolTip="Select to move to the Recycle Bin" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <DataGridTemplateColumn Header="Name" Width="*" MinWidth="160" SortMemberPath="Name">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                  <Grid ToolTip="{Binding FullPath}">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ContentControl Content="{Binding Icon}" ContentTemplate="{StaticResource NodeIconTemplate}" Focusable="False" />
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding Location}"
+                                 Style="{StaticResource Text.Tertiary}"
+                                 FontSize="11"
+                                 TextTrimming="CharacterEllipsis"
+                                 Visibility="{Binding DataContext.IsFolderMode, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <DataGridTemplateColumn x:Name="SizeColumn" Header="Size" Width="92" SortMemberPath="Size" SortDirection="Descending">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SizeText}" />
+                    <Grid x:Name="Track" Height="3" Margin="0,4,8,0" Background="#1A2636">
+                      <Border HorizontalAlignment="Left" CornerRadius="1.5" Background="#2F7BF6" Opacity="0.85">
+                        <Border.Width>
+                          <MultiBinding Converter="{StaticResource FractionToWidth}">
+                            <Binding Path="ShareOfParent" />
+                            <Binding Path="ActualWidth" ElementName="Track" />
+                          </MultiBinding>
+                        </Border.Width>
+                      </Border>
+                    </Grid>
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <DataGridTextColumn x:Name="TypeColumn" Header="Type" Width="118" Binding="{Binding TypeName}" SortMemberPath="TypeName">
+              <DataGridTextColumn.ElementStyle>
+                <Style TargetType="TextBlock">
+                  <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                  <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                </Style>
+              </DataGridTextColumn.ElementStyle>
+            </DataGridTextColumn>
+
+            <DataGridTextColumn x:Name="ModifiedColumn" Header="Modified" Width="104" Binding="{Binding ModifiedText}" SortMemberPath="Modified">
+              <DataGridTextColumn.ElementStyle>
+                <Style TargetType="TextBlock">
+                  <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                </Style>
+              </DataGridTextColumn.ElementStyle>
+            </DataGridTextColumn>
+
+            <DataGridTemplateColumn Header="Risk" Width="108" SortMemberPath="Risk">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                  <Border Style="{StaticResource RiskBadge}" ToolTip="{Binding RiskTooltip}">
+                    <TextBlock Text="{Binding RiskShortLabel}" />
+                  </Border>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <DataGridTemplateColumn x:Name="MenuColumn" Width="40" CanUserSort="False" CanUserResize="False">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <Button Content="&#xE712;" Style="{StaticResource Button.Icon}" Width="30" Height="30" ToolTip="Actions" Click="OnRowMenu" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="2" Text="Nothing to show here." Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+          <TextBlock.Visibility>
+            <MultiBinding Converter="{StaticResource BoolPatternToVisibility}" ConverterParameter="True,False,False">
+              <Binding Path="HasScan" />
+              <Binding Path="IsBusy" />
+              <Binding Path="Table.Rows.Count" Converter="{StaticResource CountToBool}" />
+            </MultiBinding>
+          </TextBlock.Visibility>
+        </TextBlock>
+        <ProgressBar Grid.Row="2" IsIndeterminate="True" Height="2" VerticalAlignment="Top" Margin="12,0"
+                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+
+        <Border Grid.Row="3" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="18,9">
+          <Grid>
+            <TextBlock Text="{Binding ListCaption}" Style="{StaticResource Text.Tertiary}" AutomationProperties.AutomationId="ListCaption" />
+            <TextBlock Text="Sizes are logical file sizes  ·  double-click a folder to open it" Style="{StaticResource Text.Tertiary}" HorizontalAlignment="Right" />
+          </Grid>
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

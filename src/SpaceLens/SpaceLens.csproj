@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The WPF desktop app: views, view models and the composition root. Business logic lives in SpaceLens.Core. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\SpaceLens.ico</ApplicationIcon>
+    <AssemblyName>SpaceLens</AssemblyName>
+    <RootNamespace>SpaceLens</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\SpaceLens.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.21" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.21" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.21" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SpaceLens.Core\SpaceLens.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="SpaceLens.Tests" />
+  </ItemGroup>
+
+</Project>

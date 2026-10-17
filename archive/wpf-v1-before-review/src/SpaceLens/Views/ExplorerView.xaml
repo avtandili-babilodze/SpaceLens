@@ -1,0 +1,150 @@
+<UserControl x:Class="SpaceLens.Views.ExplorerView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="clr-namespace:SpaceLens.ViewModels">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="210" MinWidth="160" MaxWidth="380" />
+      <ColumnDefinition Width="10" />
+      <ColumnDefinition Width="*" MinWidth="300" />
+    </Grid.ColumnDefinitions>
+    <Border Style="{StaticResource Card}" Padding="0">
+      <DockPanel>
+        <Border DockPanel.Dock="Top" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="14,15">
+          <Grid>
+            <TextBlock Text="Folders" FontWeight="SemiBold" />
+            <TextBlock Text="" Style="{StaticResource Icon}" FontSize="14" HorizontalAlignment="Right" />
+          </Grid>
+        </Border>
+        <TreeView x:Name="FolderTree" ItemsSource="{Binding Roots}" Margin="5,8,5,5" SelectedItemChanged="Tree_SelectedItemChanged" AutomationProperties.AutomationId="FolderTree">
+          <TreeView.Resources>
+            <HierarchicalDataTemplate DataType="{x:Type vm:FolderNodeViewModel}" ItemsSource="{Binding Children}">
+              <Grid MinWidth="125" Tag="{Binding DataContext,RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="20" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ContentControl Content="{Binding Entry}" ContentTemplate="{StaticResource EntryIconTemplate}" />
+                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12" Margin="3,0,12,0" />
+                <TextBlock Grid.Column="2" Text="{Binding SizeText}" FontSize="10" Foreground="{StaticResource Muted}" />
+                <Grid.ContextMenu>
+                  <ContextMenu DataContext="{Binding PlacementTarget.Tag,RelativeSource={RelativeSource Self}}">
+                    <MenuItem Header="Reveal in Windows Explorer" Command="{Binding RevealCommand}" CommandParameter="{Binding PlacementTarget.DataContext.Entry,RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                    <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" CommandParameter="{Binding PlacementTarget.DataContext.Entry,RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                  </ContextMenu>
+                </Grid.ContextMenu>
+              </Grid>
+            </HierarchicalDataTemplate>
+          </TreeView.Resources>
+        </TreeView>
+      </DockPanel>
+    </Border>
+    <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center" Background="Transparent" />
+    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="8,7">
+          <DockPanel>
+            <Button DockPanel.Dock="Left" Command="{Binding UpCommand}" Content="" FontFamily="Segoe MDL2 Assets" Style="{StaticResource QuietButton}" ToolTip="Parent folder" AutomationProperties.Name="Parent folder" />
+            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+              <ItemsControl ItemsSource="{Binding Breadcrumbs}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="›" Foreground="{StaticResource Muted}" Margin="5,0" />
+                      <Button Content="{Binding Name}" Command="{Binding DataContext.NavigateCommand,RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource QuietButton}" FontSize="11" ToolTip="{Binding FullPath}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </Border>
+        <Grid Grid.Row="1" Margin="12,10">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <ComboBox ItemsSource="{Binding Filters}" SelectedItem="{Binding Filter}" FontSize="11" MaxWidth="170" HorizontalAlignment="Left" AutomationProperties.AutomationId="FileFilter" />
+          <CheckBox Grid.Column="1" IsChecked="{Binding SearchSubfolders}" Content="Subfolders" FontSize="11" Margin="10,0" ToolTip="Apply search and filters to every descendant" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal">
+            <ComboBox ItemsSource="{Binding SortKeys}" SelectedItem="{Binding SortKey}" FontSize="11" MinWidth="74" AutomationProperties.AutomationId="SortFiles" />
+            <Button Command="{Binding ToggleSortDirectionCommand}" Content="↕" Style="{StaticResource QuietButton}" ToolTip="Reverse sort order" />
+          </StackPanel>
+        </Grid>
+        <DataGrid Grid.Row="2" x:Name="FileGrid" ItemsSource="{Binding Entries}" SelectedItem="{Binding FocusedEntry}" MouseDoubleClick="Files_DoubleClick" Sorting="Files_Sorting" SelectionChanged="Files_SelectionChanged" Margin="8,0" AutomationProperties.AutomationId="FileTable" Tag="{Binding}">
+          <DataGrid.ContextMenu>
+            <ContextMenu DataContext="{Binding PlacementTarget.Tag,RelativeSource={RelativeSource Self}}">
+              <MenuItem Header="Open folder / inspect item" Command="{Binding NavigateCommand}" CommandParameter="{Binding FocusedEntry}" />
+              <MenuItem Header="Reveal in Windows Explorer" Command="{Binding RevealCommand}" CommandParameter="{Binding FocusedEntry}" />
+              <MenuItem Header="Copy full path" Command="{Binding CopyPathCommand}" CommandParameter="{Binding FocusedEntry}" />
+            </ContextMenu>
+          </DataGrid.ContextMenu>
+          <DataGrid.Columns>
+            <DataGridTemplateColumn Header="Name" Width="*" MinWidth="150" SortMemberPath="Name">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <Grid ToolTip="{Binding FullPath}">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource EntryIconTemplate}" Margin="0,0,10,0" />
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="12" />
+                  </Grid>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" SortMemberPath="Size" Width="78" />
+            <DataGridTextColumn Header="Type" Binding="{Binding TypeText}" SortMemberPath="Type" Width="85" />
+            <DataGridTextColumn Header="Modified" Binding="{Binding ModifiedText}" SortMemberPath="Modified" Width="96" />
+            <DataGridTemplateColumn Header="Cleanup risk" SortMemberPath="Risk" Width="120">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <Border Style="{StaticResource RiskBadge}" ToolTip="{Binding Reason}">
+                    <TextBlock Text="{Binding RiskText}" FontSize="10" />
+                  </Border>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+        <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="25" IsHitTestVisible="False">
+          <StackPanel.Style>
+            <Style TargetType="StackPanel">
+              <Setter Property="Visibility" Value="Collapsed" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Entries.Count}" Value="0">
+                  <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </StackPanel.Style>
+          <TextBlock Text="" FontFamily="Segoe MDL2 Assets" FontSize="34" Foreground="#49637E" HorizontalAlignment="Center" Margin="0,0,0,15" />
+          <TextBlock Text="A clearer view starts here" FontSize="16" HorizontalAlignment="Center" />
+          <TextBlock Text="Scan a location, or adjust your search and filters." Foreground="{StaticResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,9,0,0" MaxWidth="250" />
+        </StackPanel>
+        <ProgressBar Grid.Row="2" Height="2" VerticalAlignment="Top" IsIndeterminate="True" Foreground="{StaticResource Accent}" Visibility="{Binding IsLoading,Converter={StaticResource BoolVisibility}}" />
+        <Border Grid.Row="3" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="12,8">
+          <StackPanel>
+            <Grid>
+              <TextBlock Text="{Binding PageText}" FontSize="10" Foreground="{StaticResource Muted}" />
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="{Binding SelectionCount,StringFormat={}{0} selected}" FontSize="10" Foreground="{StaticResource Muted}" Margin="0,0,8,0" />
+                <Button Content="‹" Command="{Binding PreviousPageCommand}" Style="{StaticResource QuietButton}" Padding="7,0" ToolTip="Previous 300 items" />
+                <Button Content="›" Command="{Binding NextPageCommand}" Style="{StaticResource QuietButton}" Padding="7,0" ToolTip="Next 300 items" />
+              </StackPanel>
+            </Grid>
+            <TextBlock Text="{Binding Error}" Foreground="#E9A7AA" TextWrapping="Wrap" FontSize="11" Margin="0,5,0,0" Visibility="{Binding Error,Converter={StaticResource HasValueVisibility}}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

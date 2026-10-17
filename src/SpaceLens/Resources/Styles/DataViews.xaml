@@ -1,0 +1,257 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Sidebar navigation -->
+  <Style x:Key="NavigationList" TargetType="ListBox">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+  </Style>
+  <Style x:Key="NavigationItem" TargetType="ListBoxItem">
+    <!-- Screen readers need the label even when the compact sidebar shows only icons. -->
+    <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+    <Setter Property="Foreground" Value="#C3CFDE" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Margin" Value="0,2" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ListBoxItem">
+          <Border x:Name="Chrome" CornerRadius="10" Padding="15,12" Background="Transparent">
+            <ContentPresenter />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Chrome" Property="Background" Value="#142233" />
+              <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+              <Setter TargetName="Chrome" Property="Background">
+                <Setter.Value>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#1A4377" Offset="0" />
+                    <GradientStop Color="#143258" Offset="1" />
+                  </LinearGradientBrush>
+                </Setter.Value>
+              </Setter>
+              <Setter Property="Foreground" Value="White" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Plain list items without the system selection look -->
+  <Style x:Key="PlainListItem" TargetType="ListBoxItem">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ListBoxItem">
+          <ContentPresenter />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Folder tree: rows span the full width so selection looks like the reference design -->
+  <Style x:Key="TreeExpander" TargetType="ToggleButton">
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <Border Background="Transparent" Width="22" Height="22">
+            <TextBlock x:Name="Arrow"
+                       Text="&#xE76C;"
+                       FontFamily="{StaticResource IconFont}"
+                       FontSize="10"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       RenderTransformOrigin="0.5,0.5">
+              <TextBlock.RenderTransform>
+                <RotateTransform x:Name="Rotation" Angle="0" />
+              </TextBlock.RenderTransform>
+            </TextBlock>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Arrow" Property="RenderTransform">
+                <Setter.Value>
+                  <RotateTransform Angle="90" />
+                </Setter.Value>
+              </Setter>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Arrow" Property="Foreground" Value="{StaticResource TextBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style TargetType="TreeView">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+    <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+  </Style>
+
+  <Style TargetType="TreeViewItem">
+    <Setter Property="Foreground" Value="#D6DFEB" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="TreeViewItem">
+          <StackPanel>
+            <Border x:Name="Row" CornerRadius="8" Height="34" Margin="0,1" Background="Transparent" Cursor="Hand">
+              <Grid Margin="{Binding RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TreeIndent}}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="26" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ToggleButton x:Name="Expander"
+                              Style="{StaticResource TreeExpander}"
+                              ClickMode="Press"
+                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" />
+                <ContentPresenter x:Name="PART_Header"
+                                  Grid.Column="1"
+                                  ContentSource="Header"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,10,0" />
+              </Grid>
+            </Border>
+            <ItemsPresenter x:Name="ItemsHost" Visibility="Collapsed" />
+          </StackPanel>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsExpanded" Value="True">
+              <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="HasItems" Value="False">
+              <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
+            </Trigger>
+            <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+              <Setter TargetName="Row" Property="Background" Value="{StaticResource SurfaceHoverBrush}" />
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+              <Setter TargetName="Row" Property="Background" Value="{StaticResource SelectionBrush}" />
+              <Setter Property="Foreground" Value="White" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Data grid -->
+  <Style x:Key="GridHeader" TargetType="DataGridColumnHeader">
+    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Height" Value="38" />
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="DataGridColumnHeader">
+          <Border x:Name="Chrome" Background="Transparent" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="{TemplateBinding Padding}">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <ContentPresenter VerticalAlignment="Center" />
+              <TextBlock x:Name="SortArrow"
+                         FontFamily="{StaticResource IconFont}"
+                         FontSize="9"
+                         Margin="6,1,0,0"
+                         VerticalAlignment="Center"
+                         Foreground="{StaticResource TextSecondaryBrush}"
+                         Visibility="Collapsed" />
+            </StackPanel>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            </Trigger>
+            <Trigger Property="SortDirection" Value="Ascending">
+              <Setter TargetName="SortArrow" Property="Text" Value="&#xE70E;" />
+              <Setter TargetName="SortArrow" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="SortDirection" Value="Descending">
+              <Setter TargetName="SortArrow" Property="Text" Value="&#xE70D;" />
+              <Setter TargetName="SortArrow" Property="Visibility" Value="Visible" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="GridCell" TargetType="DataGridCell">
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="DataGridCell">
+          <Border Background="Transparent" Padding="8,0">
+            <ContentPresenter VerticalAlignment="Center" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="GridRow" TargetType="DataGridRow">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#D9E2EE" />
+    <Setter Property="BorderBrush" Value="#16212E" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{StaticResource SurfaceHoverBrush}" />
+      </Trigger>
+      <Trigger Property="IsSelected" Value="True">
+        <Setter Property="Background" Value="{StaticResource SelectionBrush}" />
+        <Setter Property="Foreground" Value="White" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style TargetType="DataGrid">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="GridLinesVisibility" Value="None" />
+    <Setter Property="HeadersVisibility" Value="Column" />
+    <Setter Property="RowHeaderWidth" Value="0" />
+    <Setter Property="AutoGenerateColumns" Value="False" />
+    <Setter Property="CanUserAddRows" Value="False" />
+    <Setter Property="CanUserDeleteRows" Value="False" />
+    <Setter Property="CanUserResizeRows" Value="False" />
+    <Setter Property="CanUserReorderColumns" Value="False" />
+    <Setter Property="CanUserResizeColumns" Value="True" />
+    <Setter Property="SelectionMode" Value="Single" />
+    <Setter Property="SelectionUnit" Value="FullRow" />
+    <Setter Property="IsReadOnly" Value="True" />
+    <Setter Property="EnableRowVirtualization" Value="True" />
+    <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+    <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+    <Setter Property="ColumnHeaderStyle" Value="{StaticResource GridHeader}" />
+    <Setter Property="CellStyle" Value="{StaticResource GridCell}" />
+    <Setter Property="RowStyle" Value="{StaticResource GridRow}" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+  </Style>
+
+</ResourceDictionary>

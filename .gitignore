@@ -1,0 +1,15 @@
+﻿**/bin/
+**/obj/
+artifacts/
+.vs/
+TestResults/
+node_modules/
+dist/
+target/
+*.user
+*.log
+*.db
+*.db-shm
+*.db-wal
+*.dpapi
+.env*

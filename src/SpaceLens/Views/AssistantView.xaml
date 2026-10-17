@@ -1,0 +1,222 @@
+<UserControl x:Class="SpaceLens.Views.AssistantView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:SpaceLens.Controls"
+             xmlns:vm="clr-namespace:SpaceLens.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:AssistantViewModel}">
+  <UserControl.Resources>
+    <!-- One template per message kind -->
+    <DataTemplate x:Key="UserMessage" DataType="{x:Type vm:ChatMessageViewModel}">
+      <Border HorizontalAlignment="Right" MaxWidth="290" Margin="40,6,0,6" Padding="12,8" CornerRadius="12,12,4,12" Background="#1A3354">
+        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+      </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="AnswerMessage" DataType="{x:Type vm:ChatMessageViewModel}">
+      <Grid Margin="0,8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border Width="34" Height="34" CornerRadius="9" Background="#1A2A40" VerticalAlignment="Top">
+          <Path Data="{StaticResource TrendGeometry}" Stroke="#B9C9DD" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="24" Height="24" Stretch="None" />
+        </Border>
+        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+          <TextBlock controls:ChatText.Text="{Binding Text}"
+                     controls:ChatText.LinkCommand="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                     controls:ChatText.LinkBrush="{StaticResource AccentHoverBrush}"
+                     TextWrapping="Wrap"
+                     LineHeight="20"
+                     Foreground="#D5DEEA" />
+
+          <!-- Plan steps, numbered like the reference design -->
+          <ItemsControl ItemsSource="{Binding Steps}" Margin="0,8,0,0" Visibility="{Binding HasSteps, Converter={StaticResource BoolToVisibility}}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="{x:Type vm:PlanStepViewModel}">
+                <Grid Margin="0,7">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <Border Width="30" Height="30" CornerRadius="15" Background="#1C2A3C" VerticalAlignment="Top">
+                    <TextBlock Text="{Binding Number}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0,8,0">
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding SizeText}" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                    <Border Style="{StaticResource RiskBadge}" HorizontalAlignment="Right" Margin="0,5,0,0">
+                      <TextBlock Text="{Binding RiskLabel}" />
+                    </Border>
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+            <TextBlock Text="{Binding SourceLabel}" Style="{StaticResource Text.Tertiary}" FontSize="11" VerticalAlignment="Center" />
+            <Button Content="Open this plan in Cleanup"
+                    Style="{StaticResource Button.Link}"
+                    FontSize="12"
+                    Margin="10,0,0,0"
+                    Command="{Binding DataContext.OpenPlanCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="{Binding}"
+                    Visibility="{Binding HasSteps, Converter={StaticResource BoolToVisibility}}" />
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NoticeMessage" DataType="{x:Type vm:ChatMessageViewModel}">
+      <TextBlock Text="{Binding Text}" Style="{StaticResource Text.Tertiary}" TextWrapping="Wrap" TextAlignment="Center" Margin="12,6" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="ErrorMessage" DataType="{x:Type vm:ChatMessageViewModel}">
+      <Border Margin="0,6" Padding="12,9" CornerRadius="10" Background="#3A1D24" BorderBrush="#6B2F38" BorderThickness="1">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="&#xE7BA;" Style="{StaticResource Text.Glyph}" FontSize="13" Foreground="{StaticResource DangerBrush}" VerticalAlignment="Top" Margin="0,2,10,0" />
+          <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" Foreground="#F3C9CC" />
+        </Grid>
+      </Border>
+    </DataTemplate>
+
+    <controls:ChatMessageTemplateSelector x:Key="MessageTemplates"
+                                          User="{StaticResource UserMessage}"
+                                          Answer="{StaticResource AnswerMessage}"
+                                          Notice="{StaticResource NoticeMessage}"
+                                          Error="{StaticResource ErrorMessage}" />
+  </UserControl.Resources>
+
+  <Border Style="{StaticResource Card}" Padding="18,14">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <!-- Header -->
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="&#xE99A;" Style="{StaticResource Text.Glyph}" FontSize="22" Foreground="{StaticResource AccentBrush}" />
+        <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+          <TextBlock Text="AI Storage Assistant" Style="{StaticResource Text.Section}" />
+          <TextBlock Style="{StaticResource Text.Tertiary}" FontSize="11" TextTrimming="CharacterEllipsis">
+            <Run Text="{Binding ModeLabel, Mode=OneWay}" />
+            <Run Text="  ·  " />
+            <Run Text="{Binding FocusText, Mode=OneWay}" />
+          </TextBlock>
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal">
+          <Button Content="&#xE74D;" Style="{StaticResource Button.Icon}" FontSize="12" Command="{Binding ClearCommand}" ToolTip="Clear the conversation" />
+          <Button Content="&#xE921;" Style="{StaticResource Button.Icon}" FontSize="11" Command="{Binding ToggleExpandedCommand}" ToolTip="Collapse or expand" />
+          <Button Content="&#xE8BB;" Style="{StaticResource Button.Icon}" FontSize="10" Command="{Binding CloseCommand}" ToolTip="Close the assistant" />
+        </StackPanel>
+      </Grid>
+
+      <!-- Input -->
+      <Grid Grid.Row="1" Margin="0,12,0,0">
+        <TextBox x:Name="QuestionBox"
+                 Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}"
+                 Style="{StaticResource AskBox}"
+                 Tag="Ask about your storage…"
+                 AutomationProperties.AutomationId="AssistantInput">
+          <TextBox.InputBindings>
+            <KeyBinding Key="Enter" Command="{Binding SendCommand}" />
+          </TextBox.InputBindings>
+        </TextBox>
+        <Button HorizontalAlignment="Right" Margin="0,0,7,0" Width="34" Height="34" Padding="0"
+                Command="{Binding SendCommand}"
+                ToolTip="Send (Enter)"
+                AutomationProperties.AutomationId="SendQuestion">
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource Button.Primary}">
+              <Setter Property="Template">
+                <Setter.Value>
+                  <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="17">
+                      <TextBlock Text="&#xE724;" Style="{StaticResource Text.Glyph}" FontSize="14" Foreground="White" HorizontalAlignment="Center" Margin="2,0,0,0" />
+                    </Border>
+                  </ControlTemplate>
+                </Setter.Value>
+              </Setter>
+            </Style>
+          </Button.Style>
+        </Button>
+      </Grid>
+
+      <!-- Conversation -->
+      <ScrollViewer x:Name="Conversation" Grid.Row="2" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                    Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}">
+        <StackPanel>
+          <!-- Suggestions before the first question -->
+          <StackPanel Visibility="{Binding ShowSuggestions, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="Ask anything about what's using space. Try:" Style="{StaticResource Text.Caption}" Margin="2,2,0,8" />
+            <ItemsControl ItemsSource="{Binding Suggestions}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Button Content="{Binding}"
+                          Margin="0,0,8,8"
+                          Padding="12,6"
+                          FontSize="12"
+                          Command="{Binding DataContext.SendCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <ItemsControl ItemsSource="{Binding Messages}" ItemTemplateSelector="{StaticResource MessageTemplates}" AutomationProperties.AutomationId="AssistantMessages" />
+
+          <!-- Consent before the first Claude request -->
+          <Border Margin="0,8,0,4" Padding="14,12" CornerRadius="10" Background="#14273F" BorderBrush="{StaticResource SelectionBorderBrush}" BorderThickness="1"
+                  Visibility="{Binding NeedsConsent, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+              <TextBlock Text="Share scan details with Claude?" FontWeight="SemiBold" />
+              <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,10" LineHeight="17"
+                         Text="To answer, Claude Haiku 5.5 receives folder and file names, paths, sizes and dates from this scan, only the parts it needs. File contents are never sent. You can change this in Settings." />
+              <StackPanel Orientation="Horizontal">
+                <Button Content="Allow" Style="{StaticResource Button.Primary}" Padding="14,6" Command="{Binding AllowSharingCommand}" AutomationProperties.AutomationId="AllowSharing" />
+                <Button Content="Answer offline" Padding="14,6" Margin="8,0,0,0" Command="{Binding AnswerOfflineCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Working indicator -->
+      <Grid Grid.Row="3" Margin="0,8,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel>
+          <TextBlock Text="{Binding Activity}" Style="{StaticResource Text.Caption}" TextTrimming="CharacterEllipsis" AutomationProperties.AutomationId="AssistantActivity" />
+          <ProgressBar IsIndeterminate="True" Height="2" Margin="0,6,0,0" />
+        </StackPanel>
+        <Button Grid.Column="1" Content="Stop" Style="{StaticResource Button.Ghost}" Margin="10,0,0,0" Command="{Binding StopCommand}" />
+      </Grid>
+    </Grid>
+  </Border>
+</UserControl>

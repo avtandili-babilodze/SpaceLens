@@ -1,0 +1,238 @@
+<UserControl x:Class="SpaceLens.Views.CleanupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:SpaceLens.Core.Models;assembly=SpaceLens.Core"
+             xmlns:vm="clr-namespace:SpaceLens.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:CleanupViewModel}">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!-- Goal -->
+    <Border Style="{StaticResource Card}" Padding="22,18">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel>
+          <TextBlock Text="Storage Goal Solver" Style="{StaticResource Text.PageTitle}" />
+          <TextBlock Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,4,0,14"
+                     Text="Tell SpaceLens how much space you need. It plans the lowest-risk way to get there from your scan, and nothing is removed until you confirm." />
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="I want to free" VerticalAlignment="Center" FontSize="15" />
+            <TextBox Text="{Binding GoalText, UpdateSourceTrigger=PropertyChanged}" Width="130" Margin="12,0" FontSize="15" Tag="20 GB" AutomationProperties.AutomationId="CleanupGoal">
+              <TextBox.InputBindings>
+                <KeyBinding Key="Enter" Command="{Binding CreatePlanCommand}" />
+              </TextBox.InputBindings>
+            </TextBox>
+            <Button Content="Build plan" Style="{StaticResource Button.Primary}" Padding="18,9" Command="{Binding CreatePlanCommand}" AutomationProperties.AutomationId="CreatePlan" />
+            <TextBlock Text="{Binding GoalError}" Foreground="{StaticResource DangerBrush}" VerticalAlignment="Center" Margin="14,0,0,0" />
+          </StackPanel>
+          <StackPanel Margin="0,14,0,0" Visibility="{Binding HasPlan, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="{Binding PlanHeadline}" FontWeight="SemiBold" FontSize="14" AutomationProperties.AutomationId="PlanHeadline" />
+            <TextBlock Text="{Binding Plan.Summary}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,4,0,0" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="24,4,0,0">
+          <Border Padding="16,12" CornerRadius="10" Background="{StaticResource TileGreenBackground}" MinWidth="150">
+            <StackPanel>
+              <TextBlock Text="Low risk" Foreground="{StaticResource RiskLowForeground}" FontSize="12" />
+              <TextBlock Text="{Binding LowRiskText}" FontSize="22" FontWeight="SemiBold" Margin="0,2,0,0" />
+            </StackPanel>
+          </Border>
+          <Border Padding="16,12" CornerRadius="10" Background="{StaticResource RiskReviewBackground}" MinWidth="150" Margin="10,0,0,0">
+            <StackPanel>
+              <TextBlock Text="Needs review" Foreground="{StaticResource RiskReviewForeground}" FontSize="12" />
+              <TextBlock Text="{Binding ReviewText}" FontSize="22" FontWeight="SemiBold" Margin="0,2,0,0" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" Margin="0,14,0,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="340" />
+        <ColumnDefinition Width="14" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+
+      <!-- Groups -->
+      <Border Style="{StaticResource Card}" Padding="10">
+        <Grid>
+          <ListBox ItemsSource="{Binding Opportunities}"
+                   SelectedItem="{Binding Selected, Mode=OneWay}"
+                   Background="Transparent"
+                   Foreground="{StaticResource TextBrush}"
+                   BorderThickness="0"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                   ItemContainerStyle="{StaticResource PlainListItem}"
+                   SelectionChanged="OnOpportunitySelected"
+                   AutomationProperties.AutomationId="CleanupGroups">
+            <ListBox.ItemTemplate>
+              <DataTemplate DataType="{x:Type vm:OpportunityViewModel}">
+                <Border x:Name="Chrome" Margin="0,0,0,8" Padding="14,12" CornerRadius="10" Background="#101A26" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Cursor="Hand">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="Step" Width="28" Height="28" CornerRadius="14" Background="{StaticResource AccentBrush}" VerticalAlignment="Top" Margin="0,0,12,0" Visibility="Collapsed">
+                      <TextBlock Text="{Binding PlanStep}" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,3,0,0" MaxHeight="34" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Style="{StaticResource Text.Tertiary}" Margin="0,6,0,0">
+                        <Run Text="{Binding ItemCountText, Mode=OneWay}" />
+                        <Run Text="{Binding PlannedText, Mode=OneWay}" Foreground="{StaticResource AccentHoverBrush}" />
+                      </TextBlock>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                      <TextBlock Text="{Binding SizeText}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                      <Border Style="{StaticResource RiskBadge}" HorizontalAlignment="Right" Margin="0,6,0,0">
+                        <TextBlock Text="{Binding RiskLabel}" />
+                      </Border>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+                <DataTemplate.Triggers>
+                  <DataTrigger Binding="{Binding IsInPlan}" Value="True">
+                    <Setter TargetName="Step" Property="Visibility" Value="Visible" />
+                  </DataTrigger>
+                  <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                    <Setter TargetName="Chrome" Property="Background" Value="#132238" />
+                  </DataTrigger>
+                </DataTemplate.Triggers>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="24" VerticalAlignment="Center"
+                     Visibility="{Binding HasOpportunities, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Secondary}">
+                <Setter Property="Text" Value="Nothing worth cleaning was found in this scan. The largest folders on the Overview are your best lead." />
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding HasScan}" Value="False">
+                    <Setter Property="Text" Value="Scan a drive to find caches, leftovers and large files you could remove." />
+                  </DataTrigger>
+                  <DataTrigger Binding="{Binding IsAnalyzing}" Value="True">
+                    <Setter Property="Text" Value="Looking for cleanup opportunities…" />
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+        </Grid>
+      </Border>
+
+      <!-- Selected group -->
+      <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0" DataContext="{Binding Selected}"
+              Visibility="{Binding Converter={StaticResource HasValueToVisibility}}">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          <StackPanel Margin="20,16,20,10">
+            <Grid>
+              <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Section}" FontSize="17" />
+              <Border Style="{StaticResource RiskBadge}" HorizontalAlignment="Right">
+                <TextBlock Text="{Binding RiskLabel}" />
+              </Border>
+            </Grid>
+            <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,6,0,0" />
+          </StackPanel>
+
+          <DataGrid Grid.Row="1" Margin="8,0" ItemsSource="{Binding Items}" SizeChanged="OnGridSizeChanged" Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibility}}"
+                    AutomationProperties.AutomationId="CleanupItems">
+            <DataGrid.Columns>
+              <DataGridTemplateColumn Width="40" CanUserSort="False" CanUserResize="False">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                    <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanRemove}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="Item" Width="*" MinWidth="200" SortMemberPath="Name">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                    <Grid ToolTip="{Binding FullPath}">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
+                      <ContentControl Content="{Binding Icon}" ContentTemplate="{StaticResource NodeIconTemplate}" Focusable="False" />
+                      <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Location}" Style="{StaticResource Text.Tertiary}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTextColumn Header="Size" Width="86" Binding="{Binding SizeText}" SortMemberPath="Size" />
+              <DataGridTextColumn x:Name="ModifiedColumn" Header="Modified" Width="104" Binding="{Binding ModifiedText}" SortMemberPath="Modified" />
+              <DataGridTemplateColumn Header="Risk" Width="96" SortMemberPath="Risk">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                    <Border Style="{StaticResource RiskBadge}" ToolTip="{Binding RiskTooltip}">
+                      <TextBlock Text="{Binding RiskShortLabel}" />
+                    </Border>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Width="72" CanUserSort="False">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                    <StackPanel Orientation="Horizontal">
+                      <Button Content="&#xE8B7;" Style="{StaticResource Button.Icon}" Width="30" Height="30" ToolTip="Show in SpaceLens"
+                              Command="{Binding DataContext.ShowInExplorerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
+                      <Button Content="&#xE8A7;" Style="{StaticResource Button.Icon}" Width="30" Height="30" ToolTip="Reveal in File Explorer"
+                              Command="{Binding DataContext.RevealCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+            </DataGrid.Columns>
+          </DataGrid>
+
+          <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420"
+                      Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
+            <TextBlock Text="{Binding SizeText}" Style="{StaticResource Text.Metric}" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding ItemCountText}" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+          </StackPanel>
+
+          <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="20,12">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="{Binding CheckedText}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <Button Content="Select all" Style="{StaticResource Button.Link}" Margin="12,0,0,0" Command="{Binding CheckAllCommand}" />
+                <Button Content="Select none" Style="{StaticResource Button.Link}" Command="{Binding CheckNoneCommand}" />
+              </StackPanel>
+              <Button Grid.Column="1" HorizontalAlignment="Right" Style="{StaticResource Button.Primary}" Padding="14,8" Margin="12,0,0,0"
+                      Content="{Binding ActionText}"
+                      Command="{Binding DataContext.RunActionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                      CommandParameter="{Binding}"
+                      AutomationProperties.AutomationId="RunCleanupAction" />
+            </Grid>
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/TestResults/
+.git/
+.vs/
+artifacts/
+archive/
+references/
+scripts/
+*.user

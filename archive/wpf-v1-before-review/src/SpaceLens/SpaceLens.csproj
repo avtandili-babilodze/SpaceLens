@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>SpaceLens</AssemblyName>
+    <RootNamespace>SpaceLens</RootNamespace>
+    <Version>0.1.0</Version>
+    <ApplicationIcon>Assets\SpaceLens.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\SpaceLens.ico" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.21" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.21" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.21" />
+    <!-- Explicit bundle pin keeps native SQLite above the vulnerable transitive version. -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.14" />
+  </ItemGroup>
+</Project>

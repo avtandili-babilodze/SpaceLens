@@ -1,0 +1,17 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:SpaceLens.Infrastructure.Converters">
+
+  <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+  <converters:HasValueToVisibilityConverter x:Key="HasValueToVisibility" />
+  <converters:EqualsToVisibilityConverter x:Key="EqualsToVisibility" />
+  <converters:EqualsToBoolConverter x:Key="EqualsToBool" />
+  <converters:BoolPatternToVisibilityConverter x:Key="BoolPatternToVisibility" />
+  <converters:FractionToWidthConverter x:Key="FractionToWidth" />
+  <converters:ColorToBrushConverter x:Key="ColorToBrush" />
+  <converters:BytesToTextConverter x:Key="BytesToText" />
+  <converters:CountToBoolConverter x:Key="CountToBool" />
+  <converters:TreeIndentConverter x:Key="TreeIndent" />
+  <converters:NodeIconConverter x:Key="NodeIcon" />
+
+</ResourceDictionary>

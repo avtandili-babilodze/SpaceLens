@@ -1,0 +1,171 @@
+<UserControl x:Class="SpaceLens.Views.DetailsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:SpaceLens.Core.Models;assembly=SpaceLens.Core"
+             xmlns:vm="clr-namespace:SpaceLens.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:DetailsViewModel}">
+  <Border Style="{StaticResource Card}" Padding="20,18">
+    <Grid>
+      <TextBlock Text="Select a folder or file to see its details."
+                 Style="{StaticResource Text.Secondary}"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"
+                 Visibility="{Binding HasNode, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}" />
+
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                    Visibility="{Binding HasNode, Converter={StaticResource BoolToVisibility}}">
+        <StackPanel Margin="0,0,6,0">
+          <!-- Header -->
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Viewbox Width="42" Height="42" VerticalAlignment="Top">
+              <ContentControl Content="{Binding Icon}" ContentTemplate="{StaticResource NodeIconTemplate}" Focusable="False" />
+            </Viewbox>
+            <StackPanel Grid.Column="1" Margin="14,0,8,0" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Name}" FontSize="19" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" AutomationProperties.AutomationId="DetailsName" />
+              <TextBlock Text="{Binding Path}" Style="{StaticResource Text.Secondary}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}" Margin="0,3,0,0" />
+            </StackPanel>
+            <Button Grid.Column="2" Content="&#xE712;" Style="{StaticResource Button.Icon}" VerticalAlignment="Top" ToolTip="Actions" Click="OnMenu">
+              <Button.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Ask AI about this" Command="{Binding AskCommand}" />
+                  <MenuItem Header="Reveal in File Explorer" Command="{Binding RevealCommand}" />
+                  <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" />
+                </ContextMenu>
+              </Button.ContextMenu>
+            </Button>
+          </Grid>
+
+          <!-- Size -->
+          <Grid Margin="0,20,0,0">
+            <TextBlock Text="{Binding SizeText}" FontSize="30" FontWeight="SemiBold" AutomationProperties.AutomationId="DetailsSize" />
+            <TextBlock Text="{Binding ItemsText}" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,6" />
+          </Grid>
+
+          <!-- Risk -->
+          <StackPanel Orientation="Horizontal" Margin="0,8,0,0" DataContext="{Binding Risk}">
+            <Border Style="{StaticResource RiskBadge}">
+              <TextBlock Text="{Binding Label}" />
+            </Border>
+          </StackPanel>
+          <TextBlock Text="{Binding Risk.Reason}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="17" />
+
+          <!-- Breakdown -->
+          <StackPanel Visibility="{Binding IsFolder, Converter={StaticResource BoolToVisibility}}" Margin="0,18,0,0">
+            <Grid Margin="0,0,0,10">
+              <TextBlock Text="Breakdown" Style="{StaticResource Text.Section}" VerticalAlignment="Center" />
+              <Border Style="{StaticResource SegmentHost}" HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal">
+                  <RadioButton Content="Contents" Style="{StaticResource Segment}" GroupName="Breakdown"
+                               IsChecked="{Binding BreakdownMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter=Contents}"
+                               Command="{Binding SetBreakdownModeCommand}" CommandParameter="{x:Static vm:BreakdownMode.Contents}" />
+                  <RadioButton Content="File types" Style="{StaticResource Segment}" GroupName="Breakdown"
+                               IsChecked="{Binding BreakdownMode, Mode=OneWay, Converter={StaticResource EqualsToBool}, ConverterParameter=FileTypes}"
+                               Command="{Binding SetBreakdownModeCommand}" CommandParameter="{x:Static vm:BreakdownMode.FileTypes}" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <!-- Stacked bar -->
+            <ItemsControl x:Name="Bar" ItemsSource="{Binding Segments}" Height="12" ClipToBounds="True">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type models:BreakdownSegment}">
+                  <Border Background="{Binding Color, Converter={StaticResource ColorToBrush}}" CornerRadius="3" Margin="0,0,2,0" ToolTip="{Binding Label}">
+                    <Border.Width>
+                      <MultiBinding Converter="{StaticResource FractionToWidth}">
+                        <Binding Path="Fraction" />
+                        <Binding Path="ActualWidth" ElementName="Bar" />
+                      </MultiBinding>
+                    </Border.Width>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Legend -->
+            <ItemsControl ItemsSource="{Binding Segments}" Margin="0,14,0,0">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type models:BreakdownSegment}">
+                  <Grid Margin="0,5">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="22" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="52" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="11" Height="11" CornerRadius="3" Background="{Binding Color, Converter={StaticResource ColorToBrush}}" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="1" Text="{Binding Label}" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
+                    <TextBlock Grid.Column="2" Text="{Binding SizeText}" Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Grid.Column="3" Text="{Binding PercentText}" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <!-- Largest items -->
+          <StackPanel Visibility="{Binding LargestItems, Converter={StaticResource HasValueToVisibility}}" Margin="0,18,0,0">
+            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,0,0,14" />
+            <Grid Margin="0,0,0,6">
+              <TextBlock Text="Largest files" Style="{StaticResource Text.Section}" VerticalAlignment="Center" />
+              <Button Style="{StaticResource Button.Link}" HorizontalAlignment="Right" Command="{Binding SeeAllLargestCommand}">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="See all" />
+                  <TextBlock Text="&#xE76C;" Style="{StaticResource Text.Glyph}" FontSize="9" Margin="6,1,0,0" />
+                </StackPanel>
+              </Button>
+            </Grid>
+            <ItemsControl ItemsSource="{Binding LargestItems}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
+                  <Button Style="{StaticResource Button.Ghost}"
+                          Padding="6,7"
+                          HorizontalContentAlignment="Stretch"
+                          Command="{Binding DataContext.OpenItemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                          CommandParameter="{Binding}"
+                          ToolTip="{Binding FullPath}">
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <ContentControl Content="{Binding Icon}" ContentTemplate="{StaticResource NodeIconTemplate}" Focusable="False" />
+                      <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{StaticResource TextBrush}" Margin="12,0,8,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding SizeText}" VerticalAlignment="Center" />
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <!-- Caveats -->
+          <Border Margin="0,14,0,0" Padding="12,10" CornerRadius="8" Background="#1B2433" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                  Visibility="{Binding Note, Converter={StaticResource HasValueToVisibility}}">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Text="&#xE946;" Style="{StaticResource Text.Glyph}" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Top" Margin="0,2,10,0" />
+              <TextBlock Grid.Column="1" Text="{Binding Note}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" LineHeight="17" />
+            </Grid>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Border>
+</UserControl>
