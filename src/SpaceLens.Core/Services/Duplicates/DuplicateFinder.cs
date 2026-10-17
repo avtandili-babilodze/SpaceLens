@@ -9,7 +9,7 @@ namespace SpaceLens.Core.Services.Duplicates;
 public sealed class DuplicateFinder : IDuplicateFinder
 {
     /// <summary>Files smaller than this rarely matter for disk space and would make the search slow.</summary>
-    public const long MinimumSize = ByteSize.MB;
+    public const long MinimumSize = 100 * ByteSize.KB;
 
     private const int SampleSize = 64 * 1024;
 

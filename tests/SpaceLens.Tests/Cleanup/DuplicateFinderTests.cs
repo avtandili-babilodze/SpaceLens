@@ -32,6 +32,23 @@ public sealed class DuplicateFinderTests
     }
 
     [Fact]
+    public async Task FindsTypicalPhotoCopiesUnderOneMegabyteButSkipsThumbnails()
+    {
+        using var folder = new TestFolder();
+        var photo = Pattern(880 * 1024, seed: 3);
+        folder.WriteFile(@"Camera\IMG_0001.jpg", photo);
+        folder.WriteFile(@"Backup\2026\holiday-beach.jpg", photo);
+        var thumbnail = Pattern(40 * 1024, seed: 4);
+        folder.WriteFile(@"Small\thumb.jpg", thumbnail);
+        folder.WriteFile(@"Small\thumb-copy.jpg", thumbnail);
+
+        var result = await FindAsync(folder);
+
+        var group = Assert.Single(result.Groups);
+        Assert.Equal(["IMG_0001.jpg", "holiday-beach.jpg"], group.Files.Select(f => f.Name).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public async Task HardLinksAreNotReportedAsDuplicates()
     {
         using var folder = new TestFolder();

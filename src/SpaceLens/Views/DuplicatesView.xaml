@@ -17,7 +17,7 @@
         <Grid>
           <StackPanel>
             <TextBlock Text="Duplicate files" Style="{StaticResource Text.PageTitle}" />
-            <TextBlock Text="Finds files of 1 MB or more with identical contents (same size, same SHA-256). System and app files are left out, and hard links aren't counted twice."
+            <TextBlock Text="Finds files of 100 KB or more with identical contents (same size, same SHA-256). System and app files are left out, and hard links aren't counted twice."
                        Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,4,280,0" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">

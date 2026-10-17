@@ -2,7 +2,10 @@ using SpaceLens.Core.Models;
 
 namespace SpaceLens.ViewModels;
 
-/// <summary>One group of identical files. The oldest copy is kept by default and the rest are pre-selected.</summary>
+/// <summary>
+/// One group of identical files. The oldest copy (on a tie, the one with the shortest path, usually the original)
+/// is kept by default and the rest are pre-selected.
+/// </summary>
 public sealed class DuplicateGroupViewModel
 {
     public DuplicateGroupViewModel(DuplicateGroup group, NodePresenter presenter)
@@ -10,6 +13,7 @@ public sealed class DuplicateGroupViewModel
         Group = group;
         Files = group.Files
             .OrderBy(f => f.LastWriteUtc)
+            .ThenBy(f => f.FullPath.Length)
             .Select(f => new StorageItemViewModel(f, presenter, parentSize: group.FileSize * group.Files.Count))
             .ToList();
         foreach (var copy in Files.Skip(1))

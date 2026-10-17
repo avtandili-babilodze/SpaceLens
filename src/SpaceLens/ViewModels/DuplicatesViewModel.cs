@@ -102,7 +102,7 @@ public sealed partial class DuplicatesViewModel : ObservableObject
 
             Summary = result.Groups.Count == 0 ? "" : $"{ByteSize.Format(result.RedundantBytes)} in extra copies";
             Status = result.Groups.Count == 0
-                ? $"No identical files found among {result.CandidateCount:N0} same-size files of 1 MB or more."
+                ? $"No identical files found among {result.CandidateCount:N0} same-size files of 100 KB or more."
                 : $"{result.Groups.Count:N0} groups of identical files. The oldest copy in each group is kept unless you untick it.";
             if (result.SkippedCount > 0)
             {
