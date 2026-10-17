@@ -6,6 +6,10 @@ Built with **C# 13, .NET 9, WPF/XAML, CommunityToolkit.Mvvm, Microsoft.Extension
 
 ![UI reference](references/ui-reference.png)
 
+## Quick start
+
+Double-click **`run.cmd`**. It builds SpaceLens the first time (with the .NET 9 SDK, or Docker if the SDK isn't installed) and starts it; after that it starts straight away. Use `run.cmd --rebuild` after changing the source.
+
 ## Build, run, test, publish
 
 Requires Windows 10/11 and the .NET 9 SDK. From the repository root:
