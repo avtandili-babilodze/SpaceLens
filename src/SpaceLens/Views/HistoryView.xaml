@@ -32,7 +32,7 @@
               <TextBlock Text="{Binding MonthText}" FontSize="24" FontWeight="SemiBold" Margin="0,2,0,0" AutomationProperties.AutomationId="FreedThisMonth" />
             </StackPanel>
           </Border>
-          <Border Padding="18,12" CornerRadius="10" Background="#14273F" MinWidth="190" Margin="10,0,0,0">
+          <Border Padding="18,12" CornerRadius="10" Background="{StaticResource SurfaceRaisedBrush}" MinWidth="190" Margin="10,0,0,0">
             <StackPanel>
               <TextBlock Text="{Binding TotalCaption}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" />
               <TextBlock Text="{Binding TotalText}" FontSize="24" FontWeight="SemiBold" Margin="0,2,0,0" />
@@ -55,7 +55,7 @@
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="34" Height="34" CornerRadius="9" Background="#1A2A40" VerticalAlignment="Top">
+                    <Border Width="34" Height="34" CornerRadius="9" Background="#22272E" VerticalAlignment="Top">
                       <TextBlock Text="{Binding Glyph}" Style="{StaticResource Text.Glyph}" FontSize="15" Foreground="{StaticResource AccentHoverBrush}" HorizontalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="1" Margin="14,0,12,0">
@@ -63,7 +63,7 @@
                       <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Secondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" ToolTip="{Binding Summary}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" HorizontalAlignment="Right">
-                      <TextBlock Text="{Binding SizeText}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                      <TextBlock Text="{Binding SizeText}" FontFamily="{StaticResource NumberFont}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Right" />
                       <TextBlock Text="{Binding WhenText}" Style="{StaticResource Text.Tertiary}" HorizontalAlignment="Right" Margin="0,2,0,0" />
                     </StackPanel>
                   </Grid>

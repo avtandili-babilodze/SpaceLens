@@ -88,6 +88,9 @@ public sealed class InstalledAppsService(ILogger<InstalledAppsService> logger) :
 
         var installDate = entry.GetValue("InstallDate") as string;
         var canRemove = entry.GetValue("NoRemove") is not 1;
+        var iconPath = (entry.GetValue("DisplayIcon") as string)?.Trim();
+        var uninstallString = (entry.GetValue("UninstallString") as string)?.Trim();
+        var (folder, isGuessed) = AppInstallFolder.Find(entry.GetValue("InstallLocation") as string, iconPath, uninstallString);
         return new InstalledApp
         {
             Name = name,
@@ -98,8 +101,10 @@ public sealed class InstalledAppsService(ILogger<InstalledAppsService> logger) :
                 : null,
             SizeBytes = entry.GetValue("EstimatedSize") is int kilobytes and > 0 ? kilobytes * 1024L : null,
             InstallLocation = CleanPath(entry.GetValue("InstallLocation") as string),
-            IconPath = (entry.GetValue("DisplayIcon") as string)?.Trim(),
-            UninstallCommand = canRemove ? (entry.GetValue("UninstallString") as string)?.Trim() : null,
+            InstallFolder = folder,
+            IsInstallFolderGuessed = isGuessed,
+            IconPath = iconPath,
+            UninstallCommand = canRemove ? uninstallString : null,
             IsMachineWide = machineWide
         };
     }
@@ -108,19 +113,6 @@ public sealed class InstalledAppsService(ILogger<InstalledAppsService> logger) :
     {
         var trimmed = path?.Trim().Trim('"').Trim();
         return string.IsNullOrEmpty(trimmed) ? null : trimmed;
-    }
-
-    /// <summary>The executable in a DisplayIcon value such as "C:\App\app.exe,0" or "\"C:\App\app.exe\"".</summary>
-    private static string? IconExecutable(string? iconPath)
-    {
-        var path = CleanPath(iconPath);
-        var comma = path?.LastIndexOf(',') ?? -1;
-        if (path is not null && comma > 0 && int.TryParse(path[(comma + 1)..], out _))
-        {
-            path = CleanPath(path[..comma]);
-        }
-
-        return path is not null && path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? path : null;
     }
 
     /// <summary>The folders an app's own executables live in, so UserAssist entries can be matched to it.</summary>
@@ -132,7 +124,7 @@ public sealed class InstalledAppsService(ILogger<InstalledAppsService> logger) :
             folders.Add(location);
         }
 
-        if (IconExecutable(app.IconPath) is { } executable && Path.GetDirectoryName(executable) is { } folder)
+        if (AppInstallFolder.IconExecutable(app.IconPath) is { } executable && Path.GetDirectoryName(executable) is { } folder)
         {
             folders.Add(folder);
         }

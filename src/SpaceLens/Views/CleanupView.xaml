@@ -44,13 +44,13 @@
           <Border Padding="16,12" CornerRadius="10" Background="{StaticResource TileGreenBackground}" MinWidth="150">
             <StackPanel>
               <TextBlock Text="Low risk" Foreground="{StaticResource RiskLowForeground}" FontSize="12" />
-              <TextBlock Text="{Binding LowRiskText}" FontSize="22" FontWeight="SemiBold" Margin="0,2,0,0" />
+              <TextBlock Text="{Binding LowRiskText}" FontFamily="{StaticResource NumberFont}" FontSize="24" FontWeight="SemiBold" Margin="0,2,0,0" />
             </StackPanel>
           </Border>
           <Border Padding="16,12" CornerRadius="10" Background="{StaticResource RiskReviewBackground}" MinWidth="150" Margin="10,0,0,0">
             <StackPanel>
               <TextBlock Text="Needs review" Foreground="{StaticResource RiskReviewForeground}" FontSize="12" />
-              <TextBlock Text="{Binding ReviewText}" FontSize="22" FontWeight="SemiBold" Margin="0,2,0,0" />
+              <TextBlock Text="{Binding ReviewText}" FontFamily="{StaticResource NumberFont}" FontSize="24" FontWeight="SemiBold" Margin="0,2,0,0" />
             </StackPanel>
           </Border>
         </StackPanel>
@@ -78,7 +78,7 @@
                    AutomationProperties.AutomationId="CleanupGroups">
             <ListBox.ItemTemplate>
               <DataTemplate DataType="{x:Type vm:OpportunityViewModel}">
-                <Border x:Name="Chrome" Margin="0,0,0,8" Padding="14,12" CornerRadius="10" Background="#101A26" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Cursor="Hand">
+                <Border x:Name="Chrome" Margin="0,0,0,8" Padding="14,12" CornerRadius="8" Background="#16191E" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Cursor="Hand">
                   <Grid>
                     <Grid.ColumnDefinitions>
                       <ColumnDefinition Width="Auto" />
@@ -97,7 +97,7 @@
                       </TextBlock>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                      <TextBlock Text="{Binding SizeText}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                      <TextBlock Text="{Binding SizeText}" FontFamily="{StaticResource NumberFont}" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Right" />
                       <Border Style="{StaticResource RiskBadge}" HorizontalAlignment="Right" Margin="0,6,0,0">
                         <TextBlock Text="{Binding RiskLabel}" />
                       </Border>
@@ -110,7 +110,7 @@
                   </DataTrigger>
                   <DataTrigger Binding="{Binding IsSelected}" Value="True">
                     <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
-                    <Setter TargetName="Chrome" Property="Background" Value="#132238" />
+                    <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SelectionBrush}" />
                   </DataTrigger>
                 </DataTemplate.Triggers>
               </DataTemplate>
@@ -181,14 +181,15 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
-              <DataGridTextColumn Header="Size" Width="86" Binding="{Binding SizeText}" SortMemberPath="Size" />
+              <DataGridTextColumn Header="Size" Width="86" Binding="{Binding SizeText}" SortMemberPath="Size" ElementStyle="{StaticResource Text.Number}" />
               <DataGridTextColumn x:Name="ModifiedColumn" Header="Modified" Width="104" Binding="{Binding ModifiedText}" SortMemberPath="Modified" />
               <DataGridTemplateColumn Header="Risk" Width="96" SortMemberPath="Risk">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
-                    <Border Style="{StaticResource RiskBadge}" ToolTip="{Binding RiskTooltip}">
-                      <TextBlock Text="{Binding RiskShortLabel}" />
-                    </Border>
+                    <StackPanel Orientation="Horizontal" Background="Transparent" ToolTip="{Binding RiskTooltip}">
+                      <Ellipse Style="{StaticResource RiskDot}" />
+                      <TextBlock Text="{Binding RiskShortLabel}" Style="{StaticResource RiskText}" />
+                    </StackPanel>
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>

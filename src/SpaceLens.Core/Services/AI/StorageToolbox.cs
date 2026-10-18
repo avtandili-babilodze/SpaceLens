@@ -276,6 +276,15 @@ public sealed class StorageToolbox(
         var sized = scan is null
             ? installed.Select(app => (App: app, Bytes: app.SizeBytes ?? 0)).ToList()
             : await session.ReadAsync(s => installed.Select(app => (App: app, Bytes: AppSize.Best(app, s))).ToList(), cancellationToken);
+
+        // Apps neither the scan nor their installer gives a size for, such as one on another drive, are measured on disk.
+        sized = await Task.Run(
+            () => sized
+                .Select(a => a.Bytes > 0 || a.App.InstallFolder is not { } folder
+                    ? a
+                    : (a.App, AppSize.MeasureOnDisk(folder, cancellationToken) ?? 0))
+                .ToList(),
+            cancellationToken);
         var now = clock.GetUtcNow().UtcDateTime;
         return Json(new
         {

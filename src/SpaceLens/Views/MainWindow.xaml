@@ -47,18 +47,18 @@
     <!-- Sidebar (an icon rail when the window is narrow) -->
     <Border Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
       <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="19,24,12,30">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="19,24,12,32">
           <ContentControl ContentTemplate="{StaticResource LogoMark}" Focusable="False" />
-          <TextBlock Text="SpaceLens" FontSize="21" FontWeight="SemiBold" Margin="12,0,0,0" VerticalAlignment="Center"
+          <TextBlock Text="SpaceLens" FontFamily="{StaticResource NumberFont}" FontSize="22" FontWeight="SemiBold" Margin="12,0,0,0" VerticalAlignment="Center"
                      Visibility="{Binding IsCompact, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}" />
         </StackPanel>
 
-        <Border DockPanel.Dock="Bottom" Margin="16,0,16,18" Padding="14,12" CornerRadius="10" Background="#111D2B" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+        <Border DockPanel.Dock="Bottom" Margin="16,0,16,20" Padding="12,14,4,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
                 Visibility="{Binding IsCompact, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
           <StackPanel>
             <StackPanel Orientation="Horizontal">
               <Ellipse Width="7" Height="7" Fill="{StaticResource SuccessBrush}" VerticalAlignment="Center" />
-              <TextBlock Text="Scans stay on this PC" FontSize="12" Margin="8,0,0,0" />
+              <TextBlock Text="Scans stay on this PC" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="8,0,0,0" />
             </StackPanel>
             <TextBlock Style="{StaticResource Text.Tertiary}" Margin="15,4,0,0" TextWrapping="Wrap">
               <Run Text="Assistant:" />
@@ -76,7 +76,17 @@
           <ListBox.ItemTemplate>
             <DataTemplate DataType="{x:Type vm:NavigationItem}">
               <StackPanel Orientation="Horizontal" ToolTip="{Binding Label}">
-                <TextBlock Text="{Binding Glyph}" Style="{StaticResource Text.Glyph}" FontSize="18" Width="22" />
+                <TextBlock Text="{Binding Glyph}" FontSize="17" Width="22">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Glyph}">
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                          <Setter Property="Foreground" Value="{StaticResource AccentTextBrush}" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
                 <TextBlock Text="{Binding Label}" Margin="14,0,0,0" VerticalAlignment="Center"
                            Visibility="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}" />
               </StackPanel>
@@ -121,7 +131,7 @@
                     AutomationProperties.AutomationId="DriveSelector"
                     ToolTip="Choose a drive to scan" />
 
-          <Grid Grid.Column="1" Margin="24,0,14,0" Height="50" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+          <Grid Grid.Column="1" Margin="24,0,14,0" Height="44" shell:WindowChrome.IsHitTestVisibleInChrome="True">
             <TextBox x:Name="SearchBox"
                      Text="{Binding Explorer.SearchText, UpdateSourceTrigger=PropertyChanged}"
                      Style="{StaticResource SearchBox}"
@@ -134,13 +144,13 @@
           </Grid>
 
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="True">
-            <Button Command="{Binding Scan.ScanFolderCommand}" Height="44" Padding="14,0" ToolTip="Scan a specific folder" AutomationProperties.AutomationId="ChooseFolder">
+            <Button Command="{Binding Scan.ScanFolderCommand}" Height="42" Padding="14,0" ToolTip="Scan a specific folder" AutomationProperties.AutomationId="ChooseFolder">
               <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE838;" Style="{StaticResource Text.Glyph}" FontSize="15" />
                 <TextBlock Text="Folder" Margin="8,0,0,0" />
               </StackPanel>
             </Button>
-            <Button Command="{Binding Scan.ScanDriveCommand}" Style="{StaticResource Button.Primary}" Height="44" Padding="16,0" Margin="8,0,0,0" ToolTip="Scan the selected drive (F5)" AutomationProperties.AutomationId="StartScan">
+            <Button Command="{Binding Scan.ScanDriveCommand}" Style="{StaticResource Button.Primary}" Height="42" Padding="16,0" Margin="10,0,0,0" ToolTip="Scan the selected drive (F5)" AutomationProperties.AutomationId="StartScan">
               <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE72C;" Style="{StaticResource Text.Glyph}" FontSize="14" />
                 <TextBlock Margin="8,0,0,0">
@@ -306,18 +316,18 @@
               VerticalAlignment="Bottom"
               Margin="0,0,0,12"
               Padding="16,10"
-              CornerRadius="10"
+              CornerRadius="8"
               MaxWidth="760"
               BorderThickness="1"
               Visibility="{Binding Notifications.Text, Converter={StaticResource HasValueToVisibility}}">
         <Border.Style>
           <Style TargetType="Border">
-            <Setter Property="Background" Value="#16283E" />
-            <Setter Property="BorderBrush" Value="{StaticResource SelectionBorderBrush}" />
+            <Setter Property="Background" Value="#1F242A" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrongBrush}" />
             <Style.Triggers>
               <DataTrigger Binding="{Binding Notifications.IsError}" Value="True">
-                <Setter Property="Background" Value="#3A1D24" />
-                <Setter Property="BorderBrush" Value="#6B2F38" />
+                <Setter Property="Background" Value="#33191C" />
+                <Setter Property="BorderBrush" Value="#5E2A2F" />
               </DataTrigger>
             </Style.Triggers>
           </Style>

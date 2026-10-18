@@ -42,17 +42,17 @@
         <GeometryDrawing Geometry="M12,4 H52 Q56,4 57.5,8 L62,24 H2 L6.5,8 Q8,4 12,4 Z">
           <GeometryDrawing.Brush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-              <GradientStop Color="#F1F5FB" Offset="0" />
-              <GradientStop Color="#BFCBDC" Offset="1" />
+              <GradientStop Color="#EEF0F2" Offset="0" />
+              <GradientStop Color="#BCC2C9" Offset="1" />
             </LinearGradientBrush>
           </GeometryDrawing.Brush>
         </GeometryDrawing>
-        <GeometryDrawing Brush="#AEBBCE" Geometry="M2,24 H62 V37 Q62,44 55,44 H9 Q2,44 2,37 Z" />
-        <GeometryDrawing Brush="#243143" Geometry="M5,27 H59 V36 Q59,41 54,41 H10 Q5,41 5,36 Z" />
-        <GeometryDrawing Brush="#3DD68C" Geometry="M10,32 H14 V35 H10 Z" />
-        <GeometryDrawing Brush="#3DD68C" Geometry="M16,32 H20 V35 H16 Z" />
-        <GeometryDrawing Brush="#2F8CFF" Geometry="M46,32 H54 V35 H46 Z" />
-        <GeometryDrawing Brush="#2F8CFF" Geometry="M24,44 H40 V46 Q40,47 39,47 H25 Q24,47 24,46 Z" />
+        <GeometryDrawing Brush="#A6ADB6" Geometry="M2,24 H62 V37 Q62,44 55,44 H9 Q2,44 2,37 Z" />
+        <GeometryDrawing Brush="#23282E" Geometry="M5,27 H59 V36 Q59,41 54,41 H10 Q5,41 5,36 Z" />
+        <GeometryDrawing Brush="#4CC38A" Geometry="M10,32 H14 V35 H10 Z" />
+        <GeometryDrawing Brush="#4CC38A" Geometry="M16,32 H20 V35 H16 Z" />
+        <GeometryDrawing Brush="#3D8BFF" Geometry="M46,32 H54 V35 H46 Z" />
+        <GeometryDrawing Brush="#3D8BFF" Geometry="M24,44 H40 V46 Q40,47 39,47 H25 Q24,47 24,46 Z" />
       </DrawingGroup>
     </DrawingImage.Drawing>
   </DrawingImage>

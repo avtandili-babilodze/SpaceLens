@@ -90,7 +90,7 @@
                 </Grid.ColumnDefinitions>
                 <ContentControl Content="{Binding Icon}" ContentTemplate="{StaticResource NodeIconTemplate}" Focusable="False" />
                 <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="10,0,10,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="2" Text="{Binding SizeText}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding SizeText}" Foreground="{StaticResource TextSecondaryBrush}" FontFamily="{StaticResource NumberFont}" FontSize="12.5" VerticalAlignment="Center" />
                 <Grid.ContextMenu>
                   <ContextMenu>
                     <MenuItem Header="Reveal in File Explorer" Click="OnTreeReveal" />
@@ -206,7 +206,7 @@
         </Grid>
 
         <!-- Selection bar -->
-        <Border Grid.Row="1" Margin="12,0,12,8" Padding="14,8" CornerRadius="10" Background="#132A47" BorderBrush="{StaticResource SelectionBorderBrush}" BorderThickness="1"
+        <Border Grid.Row="1" Margin="12,0,12,8" Padding="14,8" CornerRadius="8" Background="#1C2B40" BorderBrush="{StaticResource SelectionBorderBrush}" BorderThickness="1"
                 Visibility="{Binding Table.HasChecked, Converter={StaticResource BoolToVisibility}}">
           <Grid>
             <TextBlock Text="{Binding Table.CheckedText}" VerticalAlignment="Center" FontWeight="SemiBold" />
@@ -280,9 +280,9 @@
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
                   <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{Binding SizeText}" />
-                    <Grid x:Name="Track" Height="3" Margin="0,4,8,0" Background="#1A2636">
-                      <Border HorizontalAlignment="Left" CornerRadius="1.5" Background="#2F7BF6" Opacity="0.85">
+                    <TextBlock Text="{Binding SizeText}" Style="{StaticResource Text.Number}" />
+                    <Grid x:Name="Track" Height="3" Margin="0,4,8,0" Background="{StaticResource CapacityTrackBrush}">
+                      <Border HorizontalAlignment="Left" CornerRadius="1.5" Background="{StaticResource AccentBrush}" Opacity="0.85">
                         <Border.Width>
                           <MultiBinding Converter="{StaticResource FractionToWidth}">
                             <Binding Path="ShareOfParent" />
@@ -316,9 +316,10 @@
             <DataGridTemplateColumn Header="Risk" Width="108" SortMemberPath="Risk">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate DataType="{x:Type vm:StorageItemViewModel}">
-                  <Border Style="{StaticResource RiskBadge}" ToolTip="{Binding RiskTooltip}">
-                    <TextBlock Text="{Binding RiskShortLabel}" />
-                  </Border>
+                  <StackPanel Orientation="Horizontal" Background="Transparent" ToolTip="{Binding RiskTooltip}">
+                    <Ellipse Style="{StaticResource RiskDot}" />
+                    <TextBlock Text="{Binding RiskShortLabel}" Style="{StaticResource RiskText}" />
+                  </StackPanel>
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>

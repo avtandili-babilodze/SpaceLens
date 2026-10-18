@@ -81,7 +81,8 @@
             <Button Content="Get an API key" Style="{StaticResource Button.Link}" Margin="12,0,0,0" Command="{Binding OpenConsoleCommand}" />
           </StackPanel>
 
-          <Border Margin="0,14,0,0" Padding="14,10" CornerRadius="8" Background="#101A27" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+          <Border Margin="0,14,0,0" Padding="14,10" CornerRadius="8" Background="#16191E" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                  Visibility="{Binding StatusDetail, Converter={StaticResource HasValueToVisibility}}">
             <TextBlock Text="{Binding StatusDetail}" TextWrapping="Wrap" AutomationProperties.AutomationId="ConnectionStatus" />
           </Border>
           <TextBlock Style="{StaticResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,8,0,0"

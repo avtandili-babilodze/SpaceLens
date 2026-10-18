@@ -8,23 +8,23 @@
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0E1621;
-    --surface: #121C28;
-    --raised: #16212F;
-    --hover: #192636;
-    --border: #1E2A3A;
-    --border-strong: #2A3A50;
-    --text: #E8EEF6;
-    --text-2: #A4B4C8;
-    --text-3: #6C7E94;
-    --accent: #2F8CFF;
-    --accent-hi: #4C9DFF;
+    --bg: #14171B;
+    --surface: #1A1E23;
+    --raised: #20252B;
+    --hover: #252A31;
+    --border: #262B32;
+    --border-strong: #38404A;
+    --text: #ECEEF0;
+    --text-2: #A0A8B2;
+    --text-3: #7F8893;
+    --accent: #3D8BFF;
+    --accent-hi: #7EB2FF;
     --sky: #38B2FF;
     --deep: #1660E0;
-    --low-bg: #0E3527; --low: #4FD69C;
-    --review-bg: #3A2C0E; --review: #F5BF4F;
-    --high-bg: #3D1B22; --high: #FF8F94;
-    --prot-bg: #1B2738; --prot: #93A7C3;
+    --low-bg: #14291F; --low: #5BCF97;
+    --review-bg: #2E2513; --review: #E9B44C;
+    --high-bg: #33191C; --high: #F28B8B;
+    --prot-bg: #22272E; --prot: #9AA4B0;
     --violet: #9B7BF7;
     --radius: 14px;
     --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
@@ -36,9 +36,9 @@
   body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   a { color: var(--accent-hi); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  code { font-family: var(--mono); font-size: .86em; background: var(--raised); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; color: #CFE0F5; white-space: nowrap; font-variant-ligatures: none; }
+  code { font-family: var(--mono); font-size: .86em; background: var(--raised); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; color: #D6DADF; white-space: nowrap; font-variant-ligatures: none; }
   code.w { white-space: normal; overflow-wrap: anywhere; }
-  pre { font-variant-ligatures: none; margin: 16px 0; padding: 16px 18px; background: #0A111B; border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; font: 13px/1.6 var(--mono); color: #CFE0F5; }
+  pre { font-variant-ligatures: none; margin: 16px 0; padding: 16px 18px; background: #101317; border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; font: 13px/1.6 var(--mono); color: #D6DADF; }
   pre code { background: none; border: 0; padding: 0; font-size: inherit; white-space: pre; }
   pre .c { color: var(--text-3); }
   pre .k { color: #7FB8FF; }
@@ -48,7 +48,7 @@
   @media (min-width: 640px) { .wrap { padding: 0 28px; } }
   svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-  .top { position: sticky; top: 0; z-index: 10; background: rgba(14, 22, 33, .86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+  .top { position: sticky; top: 0; z-index: 10; background: rgba(20, 23, 27, .88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
   .top .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
   .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; font-size: 17px; }
   .brand:hover { text-decoration: none; }
@@ -190,7 +190,7 @@
       <div class="fact"><b>~1.5 s</b><span>to scan ~390,000 files (warm cache)</span></div>
       <div class="fact"><b>7</b><span>read-only tools Claude can call</span></div>
       <div class="fact"><b>1</b><span>code path that removes or moves files</span></div>
-      <div class="fact"><b>148</b><span>unit tests, warnings as errors</span></div>
+      <div class="fact"><b>157</b><span>unit tests, warnings as errors</span></div>
     </div>
   </section>
 
@@ -226,7 +226,7 @@
             <span class="lbl">SpaceLens.exe (one process)</span>
             <div class="layer app">
               <h4>SpaceLens <span>WPF app · MVVM</span></h4>
-              <div class="chips"><span>Views (XAML)</span><span>View models</span><span>StorageMap · RingGauge · ChatText</span><span>Dialogs · folder picker · alert card</span><span>Installer · shell adapter</span></div>
+              <div class="chips"><span>Views (XAML)</span><span>View models</span><span>StorageMap · CapacityBar · ChatText</span><span>Dialogs · folder picker · alert card</span><span>Installer · shell adapter</span></div>
             </div>
             <div class="arrow">calls interfaces resolved by dependency injection</div>
             <div class="layer core">
@@ -268,7 +268,7 @@
               <tr><td>Secrets</td><td>System.Security.Cryptography.ProtectedData (Windows DPAPI)</td></tr>
               <tr><td>Windows APIs</td><td>P/Invoke: <code>FindFirstFileExW</code>, <code>SHFileOperationW</code>, <code>SHQueryRecycleBinW</code>, <code>SHEmptyRecycleBinW</code>, <code>GetFileInformationByHandle</code>, <code>ExtractIconExW</code>. COM: <code>WScript.Shell</code>. Plus the registry and <code>schtasks.exe</code></td></tr>
               <tr><td>AI</td><td>The Anthropic Messages API over plain <code>HttpClient</code> (no SDK), model <code>claude-haiku-5-5</code>, server-sent events for streaming</td></tr>
-              <tr><td>Tests</td><td>xUnit 2.9 (148 tests) and a PowerShell UI Automation smoke test</td></tr>
+              <tr><td>Tests</td><td>xUnit 2.9 (157 tests) and a PowerShell UI Automation smoke test</td></tr>
             </tbody>
           </table>
         </div>
@@ -321,7 +321,7 @@ _queue.Add((child, childPath));
         <ul>
           <li>A folder with the reparse-point attribute is checked with <code>FindFirstFileExW</code>. If bit 29 of its reparse tag, the <b>name-surrogate</b> bit (<code>0x20000000</code>), is set, it's a junction, symbolic link or mount point. It is recorded but not followed, so there are no loops and nothing is counted twice. When the tag can't be read, the folder is treated as a link to be safe.</li>
           <li>OneDrive placeholder folders are reparse points without that bit, so they are scanned normally. A cloud-only file (<code>Offline</code>, <code>RecallOnOpen</code> or <code>RecallOnDataAccess</code> attribute) keeps its <code>Length</code> but reports <code>Size = 0</code>, because it uses almost no space on this PC.</li>
-          <li>Sizes are <b>logical</b> file sizes in binary units, like File Explorer. The drive ring uses Windows' <b>physical</b> numbers. For a whole-drive scan the difference (system files, unreadable folders, compression, hard links) is shown as "used but not scanned".</li>
+          <li>Sizes are <b>logical</b> file sizes in binary units, like File Explorer. The drive bar on the Overview uses Windows' <b>physical</b> numbers. For a whole-drive scan the difference (system files, unreadable folders, compression, hard links) is shown as "used but not scanned".</li>
         </ul>
 
         <h3>The in-memory model</h3>
@@ -545,7 +545,8 @@ anthropic-version: 2023-06-01
         <h3>Installed apps</h3>
         <ul>
           <li><b>Source:</b> <code class="w">SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall</code> in HKLM (64-bit and 32-bit views) and HKCU, the same entries Windows Settings › Apps lists. Entries with <code>SystemComponent = 1</code>, a <code>ParentKeyName</code> or an update <code>ReleaseType</code> are hidden, and duplicates are merged by name and version.</li>
-          <li><b>Size:</b> the scanned size of <code>InstallLocation</code> when the scan covers it, otherwise <code>EstimatedSize</code> from the installer.</li>
+          <li><b>Size:</b> the scanned size of the app's folder when the scan covers it, otherwise <code>EstimatedSize</code> from the installer. When neither exists, the folder is measured on disk in the background (an app on another drive, say).</li>
+          <li><b>Folder:</b> <code>InstallLocation</code> when the installer recorded one. Otherwise <code>AppInstallFolder</code> takes the deepest folder holding both the uninstaller and the icon's program (D:\obs-studio for OBS), widened to the app's own folder in Program Files because uninstallers often sit in a setup subfolder. Installer caches (ProgramData, Package Cache, Windows) and folders many programs share (a drive, Program Files itself, Common Files) are never used.</li>
           <li><b>Last used:</b> decoded from <b>UserAssist</b> (<code class="w">HKCU\…\Explorer\UserAssist\{CEBFF5CD…}\Count</code>). Value names are ROT13-encoded executable paths, and each 72-byte record holds the run count at offset 4 and the last-run <code>FILETIME</code> at offset 60. Records are matched to an app through its install folder and its icon's executable folder; bare Program Files and Windows folders are never used for matching. Windows only records programs started from Start, the taskbar or File Explorer.</li>
           <li><b>Icons:</b> <code>ExtractIconExW</code> on the <code>DisplayIcon</code> value, converted to a frozen WPF bitmap.</li>
           <li><b>Uninstall:</b> <code>UninstallCommandLine</code> splits <code>UninstallString</code> into program and arguments. It handles quoted and unquoted paths with spaces, expands environment variables, and rewrites <code>msiexec /I{…}</code> to <code>/X{…}</code>. The uninstaller runs through the shell and asks for administrator rights itself if it needs them.</li>
@@ -653,7 +654,7 @@ anthropic-version: 2023-06-01
           <li><b><code>run.cmd</code></b> starts <code class="w">artifacts\publish\win-x64\SpaceLens.exe</code>. It rebuilds first if the exe is missing, or if any file under <code>src</code>, <code>Directory.Build.props</code> or <code>global.json</code> is newer than <code>last-build.stamp</code>. It builds with the .NET 9 SDK, or with Docker if the SDK is missing.</li>
           <li><b><code>package.cmd</code></b> publishes a self-contained single file (<code class="w">-r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none</code>), adds <code>Install SpaceLens.cmd</code> and a README, and zips them to <code>dist\SpaceLens.zip</code>, about 60 MB. That zip is committed so it can be downloaded without building.</li>
           <li><b>Docker.</b> The <code>Dockerfile</code> builds the whole solution in a Linux container, with the same analyzers, and exports the Windows exe. It's a reproducible build environment; the app itself runs on the Windows desktop.</li>
-          <li><b>Tests.</b> 148 xUnit tests run Core services against fakes and temporary folders, plus view-model behaviour (consent, duplicate safety, plan selection, streaming, never-touch folders, the map layout). <code>scripts\SmokeTest.ps1</code> drives the real window through UI Automation in 10 steps. <code>scripts\MakeIcon.ps1</code> renders the in-app logo into the exe icon.</li>
+          <li><b>Tests.</b> 157 xUnit tests run Core services against fakes and temporary folders, plus view-model behaviour (consent, duplicate safety, plan selection, streaming, never-touch folders, the map layout). <code>scripts\SmokeTest.ps1</code> drives the real window through UI Automation in 10 steps. <code>scripts\MakeIcon.ps1</code> renders the in-app logo into the exe icon.</li>
         </ul>
       </section>
     </article>

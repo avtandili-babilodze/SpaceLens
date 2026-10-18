@@ -36,14 +36,14 @@ public sealed class StorageMap : FrameworkElement
     private const double MinLabelWidth = 44;
     private const double MinLabelHeight = 30;
 
-    private static readonly Brush FolderFill = Frozen("#2B4A72");
-    private static readonly Brush FrameFill = Frozen("#172638");
-    private static readonly Brush FrameText = Frozen("#C9D6E6");
-    private static readonly Brush LightText = Frozen("#F4F7FB");
-    private static readonly Brush DarkText = Frozen("#0B1420");
-    private static readonly Pen Gap = FrozenPen("#0E1724", 1);
-    private static readonly Pen HoverPen = FrozenPen("#E8F0FA", 1.5);
-    private static readonly Pen SelectedPen = FrozenPen("#4C9BFF", 2.5);
+    private static readonly Brush FolderFill = Frozen("#34404D");
+    private static readonly Brush FrameFill = Frozen("#1D2228");
+    private static readonly Brush FrameText = Frozen("#C9CED4");
+    private static readonly Brush LightText = Frozen("#F4F5F7");
+    private static readonly Brush DarkText = Frozen("#111418");
+    private static readonly Pen Gap = FrozenPen("#14171B", 1);
+    private static readonly Pen HoverPen = FrozenPen("#ECEEF0", 1.5);
+    private static readonly Pen SelectedPen = FrozenPen("#5C9DFF", 2.5);
     private static readonly Dictionary<FileCategory, Brush> CategoryFills = Enum.GetValues<FileCategory>()
         .ToDictionary(c => c, c => Frozen(FileTypeClassifier.GetCategoryColor(c)));
 

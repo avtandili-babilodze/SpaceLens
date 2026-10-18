@@ -18,6 +18,15 @@ public sealed record InstalledApp
 
     public string? InstallLocation { get; init; }
 
+    /// <summary>
+    /// The folder the app occupies, for measuring it: <see cref="InstallLocation"/>, or when the installer didn't record
+    /// one, the folder SpaceLens worked out from its uninstaller and program. Null when neither points at a folder of its own.
+    /// </summary>
+    public string? InstallFolder { get; init; }
+
+    /// <summary><see cref="InstallFolder"/> was worked out rather than recorded by the installer.</summary>
+    public bool IsInstallFolderGuessed { get; init; }
+
     /// <summary>Executable (and icon index, as "path,index") the Apps list shows as its icon.</summary>
     public string? IconPath { get; init; }
 

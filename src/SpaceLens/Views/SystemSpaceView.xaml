@@ -51,12 +51,12 @@
                   <RowDefinition Height="*" />
                   <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Border Width="40" Height="40" CornerRadius="10" Background="#1A2A40" VerticalAlignment="Top">
+                <Border Width="40" Height="40" CornerRadius="10" Background="#22272E" VerticalAlignment="Top">
                   <TextBlock Text="{Binding Glyph}" Style="{StaticResource Text.Glyph}" FontSize="19" Foreground="{StaticResource AccentHoverBrush}" HorizontalAlignment="Center" />
                 </Border>
                 <StackPanel Grid.Column="1" Margin="14,0,0,0">
                   <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Section}" />
-                  <TextBlock Text="{Binding SizeText}" FontSize="22" FontWeight="SemiBold" Margin="0,4,0,0" />
+                  <TextBlock Text="{Binding SizeText}" FontFamily="{StaticResource NumberFont}" FontSize="24" FontWeight="SemiBold" Margin="0,4,0,0" />
                 </StackPanel>
                 <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Description}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" LineHeight="19" Margin="0,12,0,0" />
                 <Button Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Left" Margin="0,14,0,0" Padding="14,7"

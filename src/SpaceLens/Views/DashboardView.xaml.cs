@@ -8,8 +8,8 @@ public partial class DashboardView : UserControl
     public static readonly DependencyProperty IsNarrowProperty =
         DependencyProperty.Register(nameof(IsNarrow), typeof(bool), typeof(DashboardView), new PropertyMetadata(false));
 
-    /// <summary>Width at which the four cards switch to their compact layout.</summary>
-    private const double NarrowWidth = 1000;
+    /// <summary>Below this width the figures move under the headline so nothing gets cut off.</summary>
+    private const double NarrowWidth = 820;
 
     public DashboardView()
     {

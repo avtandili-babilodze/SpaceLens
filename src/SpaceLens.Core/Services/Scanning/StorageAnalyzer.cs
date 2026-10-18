@@ -5,10 +5,11 @@ namespace SpaceLens.Core.Services.Scanning;
 /// <summary>Read-only queries over a scanned tree. Every method walks the tree once.</summary>
 public static class StorageAnalyzer
 {
-    public const string OtherColor = "#4C668B";
-    public const string UnaccountedColor = "#2A3A52";
+    public const string OtherColor = "#5A6470";
+    public const string UnaccountedColor = "#3A414A";
 
-    private static readonly string[] ChildColors = ["#2F7BF6", "#38A3FF", "#8FA7D6"];
+    // The largest children in descending shades of the accent, so the biggest reads first.
+    private static readonly string[] ChildColors = ["#3D8BFF", "#6FA6FF", "#A3C4F7"];
 
     /// <summary>The <paramref name="count"/> largest files under <paramref name="root"/>, largest first.</summary>
     public static List<FileNode> LargestFiles(FolderNode root, int count, long minBytes = 1)

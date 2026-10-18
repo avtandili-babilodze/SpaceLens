@@ -8,23 +8,23 @@
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0E1621;
-    --surface: #121C28;
-    --raised: #16212F;
-    --hover: #192636;
-    --border: #1E2A3A;
-    --border-strong: #2A3A50;
-    --text: #E8EEF6;
-    --text-2: #A4B4C8;
-    --text-3: #6C7E94;
-    --accent: #2F8CFF;
-    --accent-hi: #4C9DFF;
+    --bg: #14171B;
+    --surface: #1A1E23;
+    --raised: #20252B;
+    --hover: #252A31;
+    --border: #262B32;
+    --border-strong: #38404A;
+    --text: #ECEEF0;
+    --text-2: #A0A8B2;
+    --text-3: #7F8893;
+    --accent: #3D8BFF;
+    --accent-hi: #7EB2FF;
     --sky: #38B2FF;
     --deep: #1660E0;
-    --low-bg: #0E3527; --low: #4FD69C;
-    --review-bg: #3A2C0E; --review: #F5BF4F;
-    --high-bg: #3D1B22; --high: #FF8F94;
-    --prot-bg: #1B2738; --prot: #93A7C3;
+    --low-bg: #14291F; --low: #5BCF97;
+    --review-bg: #2E2513; --review: #E9B44C;
+    --high-bg: #33191C; --high: #F28B8B;
+    --prot-bg: #22272E; --prot: #9AA4B0;
     --radius: 16px;
     --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
     --display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
@@ -43,7 +43,7 @@
   a { color: var(--accent-hi); text-decoration: none; }
   a:hover { text-decoration: underline; }
   code, kbd { font-family: var(--mono); font-size: .88em; }
-  code { background: var(--raised); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; color: #CFE0F5; white-space: nowrap; }
+  code { background: var(--raised); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; color: #D6DADF; white-space: nowrap; }
   kbd { background: var(--raised); border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
   @media (min-width: 640px) { .wrap { padding: 0 28px; } }
@@ -53,7 +53,7 @@
   /* Top bar */
   .top {
     position: sticky; top: 0; z-index: 10;
-    background: rgba(14, 22, 33, .86);
+    background: rgba(20, 23, 27, .88);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
   }
@@ -139,13 +139,14 @@
   .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   /* Overview mock */
-  .ov { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 18px; align-items: center; }
-  .ring { position: relative; width: 132px; height: 132px; }
-  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-  .ring .lbl { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
-  .ring .lbl b { font-size: 26px; color: var(--text); line-height: 1; font-weight: 650; }
-  .ring .lbl span { font-size: 12px; }
-  .stats { display: grid; gap: 8px; }
+  .cap-head { color: var(--text-2); font-size: 14px; }
+  .cap-head b { font: 600 30px var(--display); color: var(--text); letter-spacing: -.01em; margin-right: 4px; }
+  .capbar { display: flex; gap: 2px; height: 12px; margin: 12px 0 10px; border-radius: 4px; overflow: hidden; background: #22272D; }
+  .capbar i { display: block; height: 100%; }
+  .cap-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; }
+  .cap-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .cap-legend .free { margin-left: auto; color: var(--review); }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
   .stat { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
   .stat b { color: var(--text); font-weight: 600; white-space: nowrap; }
   .stat b.up { color: var(--review); }
@@ -156,7 +157,7 @@
   .tbl span:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
   .meter { height: 4px; border-radius: 4px; background: var(--border); margin-top: 4px; overflow: hidden; }
   .meter i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
-  @media (max-width: 460px) { .ov { grid-template-columns: minmax(0, 1fr); justify-items: center; } .stats { width: 100%; } }
+  @media (max-width: 460px) { .stats { grid-template-columns: minmax(0, 1fr); } }
 
   /* Map mock */
   .map svg { width: 100%; height: auto; display: block; border-radius: 8px; }
@@ -236,11 +237,11 @@
   .toast .btns { display: flex; gap: 8px; }
 
   /* Context menu mock */
-  .ctx { width: min(280px, 100%); margin: 0 auto; padding: 6px; border-radius: 10px; background: #1f2a38; border: 1px solid #33445a; box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .7); font-size: 13px; color: var(--text); }
+  .ctx { width: min(280px, 100%); margin: 0 auto; padding: 6px; border-radius: 10px; background: #1F242A; border: 1px solid #38404A; box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .7); font-size: 13px; color: var(--text); }
   .ctx div { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; }
   .ctx div.hl { background: rgba(47, 140, 255, .22); }
   .ctx div svg { width: 16px; height: 16px; color: var(--text-2); }
-  .ctx hr { border: 0; border-top: 1px solid #33445a; margin: 4px 6px; }
+  .ctx hr { border: 0; border-top: 1px solid #38404A; margin: 4px 6px; }
 
   /* Install */
   .install { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -388,7 +389,7 @@
           <h3><span class="tag">Overview page</span>The whole drive at a glance</h3>
           <p>The first page shows how full the drive is and where to start.</p>
           <ul>
-            <li><b>Used space</b> ring from Windows' own numbers.</li>
+            <li>A bar of the <b>whole drive</b>, split into its biggest folders, the rest and free space (amber when less than a tenth is free).</li>
             <li><b>Recoverable:</b> how much low-risk cleanup is available right now.</li>
             <li><b>Large files:</b> how many files are over 1 GB.</li>
             <li><b>Recent growth</b> since your previous scan of the same drive.</li>
@@ -397,25 +398,26 @@
         </div>
         <div class="mock" aria-label="Illustration of the Overview page">
           <div class="bar"><b>Windows (C:)</b><span class="sp example">Example</span></div>
-          <div class="ov">
-            <div class="ring">
-              <svg viewBox="0 0 120 120" aria-hidden="true">
-                <circle cx="60" cy="60" r="48" fill="none" stroke="#1E2A3A" stroke-width="12"/>
-                <circle cx="60" cy="60" r="48" fill="none" stroke="url(#ringGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="277.5 301.6"/>
-                <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38B2FF"/><stop offset="1" stop-color="#1660E0"/></linearGradient></defs>
-              </svg>
-              <div class="lbl"><b>92%</b><span>used</span></div>
-            </div>
-            <div class="stats">
-              <div class="stat"><span>Recoverable</span><b class="ok">18.4 GB</b></div>
-              <div class="stat"><span>Files over 1 GB</span><b>23</b></div>
-              <div class="stat"><span>Recent growth</span><b class="up">+3.1 GB</b></div>
-            </div>
+          <div class="cap-head"><b>134 GB</b> used of 146 GB</div>
+          <div class="capbar" role="img" aria-label="Users 74 GB, Windows 26 GB, pagefile.sys 16 GB, other 18 GB, 12 GB free">
+            <i style="width:50.7%;background:#3D8BFF"></i><i style="width:17.8%;background:#6FA6FF"></i><i style="width:11%;background:#A3C4F7"></i><i style="width:12.3%;background:#5A6470"></i>
+          </div>
+          <div class="cap-legend">
+            <span><i style="background:#3D8BFF"></i>Users 74 GB</span>
+            <span><i style="background:#6FA6FF"></i>Windows 26 GB</span>
+            <span><i style="background:#A3C4F7"></i>pagefile.sys 16 GB</span>
+            <span><i style="background:#5A6470"></i>Other 18 GB</span>
+            <span class="free">12 GB free</span>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>Recoverable</span><b class="ok">18.4 GB</b></div>
+            <div class="stat"><span>Over 1 GB</span><b>23</b></div>
+            <div class="stat"><span>Growth</span><b class="up">+3.1 GB</b></div>
           </div>
           <div class="tbl">
-            <div><span>Users</span><span>182 GB</span><span class="badge high">High Risk</span></div>
-            <div><span>Program Files</span><span>64.7 GB</span><span class="badge prot">Protected</span></div>
-            <div><span>Windows</span><span>31.2 GB</span><span class="badge prot">Protected</span></div>
+            <div><span>Users</span><span>74 GB</span><span class="badge high">High Risk</span></div>
+            <div><span>Windows</span><span>26 GB</span><span class="badge prot">Protected</span></div>
+            <div><span>pagefile.sys</span><span>16 GB</span><span class="badge prot">Protected</span></div>
             <div><span>$Recycle.Bin</span><span>2.3 GB</span><span class="badge low">Low Risk</span></div>
           </div>
         </div>
@@ -579,7 +581,7 @@
           <h3><span class="tag">Apps page</span>Which programs are big, and which you never use</h3>
           <p>The same list as Windows Settings › Apps, sorted by size, with:</p>
           <ul>
-            <li><b>Size:</b> measured from your scan when it covers the program's folder, otherwise what the installer reported.</li>
+            <li><b>Size:</b> measured from your scan when it covers the program's folder, otherwise what the installer reported. When neither knows, for example for an app on another drive, SpaceLens finds the app's folder and measures it on disk.</li>
             <li><b>Last used:</b> when you last started it from Start, the taskbar or File Explorer (Windows keeps this record). Programs started another way, like a game launcher, show "Not recorded".</li>
             <li>A filter by name or publisher, and <b>Which can I remove?</b> to ask the AI.</li>
           </ul>

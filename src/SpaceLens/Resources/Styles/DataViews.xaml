@@ -11,32 +11,40 @@
   <Style x:Key="NavigationItem" TargetType="ListBoxItem">
     <!-- Screen readers need the label even when the compact sidebar shows only icons. -->
     <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
-    <Setter Property="Foreground" Value="#C3CFDE" />
+    <Setter Property="Foreground" Value="#A9B1BB" />
     <Setter Property="FontSize" Value="14" />
     <Setter Property="Cursor" Value="Hand" />
-    <Setter Property="Margin" Value="0,2" />
+    <Setter Property="Margin" Value="0,1" />
     <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     <Setter Property="Template">
       <Setter.Value>
+        <!-- The selected page gets a short accent bar and a quiet fill, not a block of colour -->
         <ControlTemplate TargetType="ListBoxItem">
-          <Border x:Name="Chrome" CornerRadius="10" Padding="15,12" Background="Transparent">
-            <ContentPresenter />
-          </Border>
+          <Grid>
+            <Border x:Name="Chrome" CornerRadius="7" Padding="15,10" Background="Transparent" BorderThickness="1" BorderBrush="Transparent">
+              <ContentPresenter />
+            </Border>
+            <Border x:Name="Marker"
+                    Width="3"
+                    Height="18"
+                    CornerRadius="1.5"
+                    Background="{StaticResource AccentBrush}"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Visibility="Hidden" />
+          </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Chrome" Property="Background" Value="#142233" />
+              <Setter TargetName="Chrome" Property="Background" Value="#191D22" />
               <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
-              <Setter TargetName="Chrome" Property="Background">
-                <Setter.Value>
-                  <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#1A4377" Offset="0" />
-                    <GradientStop Color="#143258" Offset="1" />
-                  </LinearGradientBrush>
-                </Setter.Value>
-              </Setter>
+              <Setter TargetName="Chrome" Property="Background" Value="#1D2228" />
+              <Setter TargetName="Marker" Property="Visibility" Value="Visible" />
               <Setter Property="Foreground" Value="White" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentHoverBrush}" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -108,7 +116,7 @@
   </Style>
 
   <Style TargetType="TreeViewItem">
-    <Setter Property="Foreground" Value="#D6DFEB" />
+    <Setter Property="Foreground" Value="#D3D8DE" />
     <Setter Property="FontSize" Value="13" />
     <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -116,7 +124,7 @@
       <Setter.Value>
         <ControlTemplate TargetType="TreeViewItem">
           <StackPanel>
-            <Border x:Name="Row" CornerRadius="8" Height="34" Margin="0,1" Background="Transparent" Cursor="Hand">
+            <Border x:Name="Row" CornerRadius="6" Height="32" Margin="0,1" Background="Transparent" Cursor="Hand">
               <Grid Margin="{Binding RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TreeIndent}}">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="26" />
@@ -157,9 +165,9 @@
 
   <!-- Data grid -->
   <Style x:Key="GridHeader" TargetType="DataGridColumnHeader">
-    <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}" />
     <Setter Property="FontSize" Value="12" />
-    <Setter Property="Height" Value="38" />
+    <Setter Property="Height" Value="36" />
     <Setter Property="Padding" Value="8,0" />
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="Template">
@@ -210,8 +218,8 @@
 
   <Style x:Key="GridRow" TargetType="DataGridRow">
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="#D9E2EE" />
-    <Setter Property="BorderBrush" Value="#16212E" />
+    <Setter Property="Foreground" Value="#DADFE5" />
+    <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
     <Setter Property="BorderThickness" Value="0,0,0,1" />
     <Setter Property="MinHeight" Value="40" />
     <Setter Property="FocusVisualStyle" Value="{x:Null}" />

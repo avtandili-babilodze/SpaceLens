@@ -67,10 +67,10 @@ Command-line switches for demos and automation: `--scan <path>`, `--select <path
 
 | Page | |
 |---|---|
-| **Overview** | Drive usage ring, low-risk recoverable space, files over 1 GB, growth since the previous scan, the folder tree with recursive sizes, the item table (name, size, type, modified, cleanup risk), a details panel with a storage breakdown and largest files, and the assistant. |
+| **Overview** | A bar of the whole drive split into its largest folders, the rest and free space; low-risk recoverable space, files over 1 GB, growth since the previous scan, the folder tree with recursive sizes, the item table (name, size, type, modified, cleanup risk), a details panel with a storage breakdown and largest files, and the assistant. |
 | **Folders** | The same explorer with more room. Breadcrumbs, up, filters (folders, files, > 1 GB, cleanup candidates), sorting on every column, search across the whole scan, multi-select with check boxes, context menus. **List or Map**: the map shows the folder as tiles sized by the space they use and colored by file type, with big folders' contents nested inside (click selects, double-click opens). Items can be **moved to another drive** (File Explorer's own copy window; frees the space here, loses nothing) or marked **Never suggest for cleanup**. |
 | **Cleanup** | The **Storage Goal Solver**: enter "20 GB" and it builds the lowest-risk plan — whole low-risk groups first, then only as many reviewable items as the goal needs. High-risk and protected items are never used. |
-| **Apps** | Installed programs (the same list as Settings › Apps) with their size — measured from the scan when it covers the app's folder — and when each was last started from Start, the taskbar or File Explorer (Windows' UserAssist record). Uninstall runs the app's own uninstaller after a confirmation. |
+| **Apps** | Installed programs (the same list as Settings › Apps) with their size (measured from the scan when it covers the app's folder, from the installer's report, or on disk when neither knows, for example for an app on another drive) and when each was last started from Start, the taskbar or File Explorer (Windows' UserAssist record). Uninstall runs the app's own uninstaller after a confirmation. |
 | **System space** | What Windows keeps for itself on the system drive: hibernation file, page file, previous Windows installation, update downloads, component store, restore points. Each card explains the trade-off and opens the Windows tool that shrinks it safely (powercfg, Temporary files, DISM, System Protection); SpaceLens never deletes any of it. |
 | **Duplicates** | Same size → first/last 64 KB fingerprint → full SHA-256. Hard links aren't counted as duplicates; system and app files are left out. |
 | **Compare** | Any two saved scans of the same location: folders that grew or shrank (only the most specific folders, so `C:\Users` isn't repeated when `Videos` explains it), and new large files. |
@@ -84,7 +84,7 @@ Command-line switches for demos and automation: `--scan <path>`, `--select <path
 * Parallel directory walk (up to 8 workers) into a compact in-memory tree. A full `C:` drive with ~390,000 files scans in about 1.5 s warm; the previous version wrote every file to SQLite and took minutes.
 * Junctions, symbolic links and mount points are recorded but never followed (no loops, no double counting). OneDrive placeholders are scanned; cloud-only files count as 0 bytes on this PC.
 * Access-denied folders are marked "No access" and counted, not guessed. Cancelling keeps a clearly labelled partial result.
-* Sizes are **logical** file sizes in binary units like File Explorer (1 GB = 1,073,741,824 bytes). The usage ring uses Windows' **physical** numbers; for a whole-drive scan the details panel explains any difference (system files, unreadable folders, hard links, compression).
+* Sizes are **logical** file sizes in binary units like File Explorer (1 GB = 1,073,741,824 bytes). The drive bar uses Windows' **physical** numbers; for a whole-drive scan the details panel explains any difference (system files, unreadable folders, hard links, compression).
 
 ### Cleanup risk
 
@@ -119,7 +119,7 @@ Two production projects with a one-way dependency, plus tests:
 |---|---|---|
 | `SpaceLens.Core` (class library, no WPF) | .NET, SQLite, Microsoft.Extensions.* | Domain model, scanning, risk rules, cleanup planning and execution, history, duplicates, DPAPI credentials, the Claude client and tool loop. Everything a test can run without a window. |
 | `SpaceLens` (WPF app) | `SpaceLens.Core`, CommunityToolkit.Mvvm | Views, view models, converters, controls, and the Windows-only adapters Core asks for (confirmation dialogs, folder picker, File Explorer and clipboard). |
-| `SpaceLens.Tests` (xUnit) | both | 148 tests: Core services against fakes and temp folders, plus view-model behaviour (consent, duplicate safety, plan selection, recycle targets), streamed answers, never-touch folders and the map layout. |
+| `SpaceLens.Tests` (xUnit) | both | 157 tests: Core services against fakes and temp folders, plus view-model behaviour (consent, duplicate safety, plan selection, recycle targets), streamed answers, never-touch folders and the map layout. |
 
 Rules the code follows:
 
@@ -169,7 +169,7 @@ src/SpaceLens/
   Services/                         dialogs, folder picker, alert card, shell (File Explorer, clipboard, Settings), saved chat
   ViewModels/                       one view model per page or panel; Messages/ for IMessenger messages
   Views/                            WPF views; code-behind only for view behaviour
-  Controls/                         RingGauge, ChatText (formatted answers with links), StorageMap + SquarifiedLayout (the map)
+  Controls/                         CapacityBar (the drive bar), ChatText (formatted answers with links), StorageMap + SquarifiedLayout (the map)
   Resources/                        colours, control styles, data views, icons
 tests/SpaceLens.Tests/              xUnit tests; Support/ holds fakes and factories
 archive/                            superseded Tauri scaffold and the previous WPF version

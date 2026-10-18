@@ -87,6 +87,8 @@ public sealed partial class AppsViewModel : ObservableObject
             IsLoading = false;
         }
 
+        var measuring = MeasureMissingSizesAsync(generation);
+
         // Icons come from each app's files, so they load in the background without holding up the list.
         foreach (var item in _all.ToList())
         {
@@ -97,6 +99,39 @@ public sealed partial class AppsViewModel : ObservableObject
             }
 
             item.Icon = AppIconLoader.Load(item.App.IconPath);
+        }
+
+        await measuring;
+    }
+
+    /// <summary>
+    /// Apps whose installer reported no size and whose folder isn't in the scan (an app on another drive, say) are
+    /// measured on disk, one at a time, and the list is sorted again once they are known.
+    /// </summary>
+    private async Task MeasureMissingSizesAsync(int generation)
+    {
+        var missing = _all.Where(a => a.NeedsMeasuring).ToList();
+        foreach (var item in missing)
+        {
+            item.IsMeasuring = true;
+        }
+
+        foreach (var item in missing)
+        {
+            var folder = item.App.InstallFolder!;
+            var bytes = await Task.Run(() => AppSize.MeasureOnDisk(folder, CancellationToken.None));
+            if (generation != _generation)
+            {
+                return;
+            }
+
+            item.ShowMeasuredSize(bytes);
+        }
+
+        if (missing.Count > 0)
+        {
+            _all = [.. _all.OrderByDescending(a => a.SizeBytes)];
+            ApplyFilter();
         }
     }
 

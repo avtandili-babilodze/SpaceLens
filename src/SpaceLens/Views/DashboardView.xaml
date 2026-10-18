@@ -8,143 +8,126 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:DashboardViewModel}">
   <UserControl.Resources>
-    <!-- On narrow windows the icon tiles go and the numbers shrink, so values never get cut off. -->
-    <Style x:Key="SummaryCard" TargetType="Border" BasedOn="{StaticResource Card}">
-      <Setter Property="Margin" Value="0,0,12,0" />
-      <Setter Property="Padding" Value="18,16" />
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding IsNarrow, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-          <Setter Property="Padding" Value="14,14" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-    <Style x:Key="SummaryTile" TargetType="Border" BasedOn="{StaticResource IconTile}">
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding IsNarrow, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-          <Setter Property="Visibility" Value="Collapsed" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-    <Style x:Key="SummaryText" TargetType="StackPanel">
-      <Setter Property="Margin" Value="16,0,0,0" />
-      <Setter Property="VerticalAlignment" Value="Center" />
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding IsNarrow, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-          <Setter Property="Margin" Value="0" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-    <Style x:Key="SummaryMetric" TargetType="TextBlock" BasedOn="{StaticResource Text.Metric}">
-      <Setter Property="Margin" Value="0,3,0,2" />
-      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding IsNarrow, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-          <Setter Property="FontSize" Value="21" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-    <Style x:Key="SummaryLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Secondary}">
+    <Style x:Key="FigureLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
       <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
-    <Style x:Key="SummaryCaption" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+    <Style x:Key="FigureValue" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource NumberFont}" />
+      <Setter Property="FontSize" Value="22" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,2,0,1" />
       <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style x:Key="FigureCaption" TargetType="TextBlock" BasedOn="{StaticResource Text.Tertiary}">
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style x:Key="FigureRule" TargetType="Border">
+      <Setter Property="Width" Value="1" />
+      <Setter Property="Margin" Value="24,4" />
+      <Setter Property="Background" Value="{StaticResource BorderBrush}" />
     </Style>
   </UserControl.Resources>
 
-  <UniformGrid Columns="4" Margin="0,0,-12,0">
+  <Border Style="{StaticResource Card}" Padding="24,20,24,18">
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
 
-    <!-- Used space -->
-    <Border Style="{StaticResource SummaryCard}">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Grid>
-          <Grid.Style>
-            <Style TargetType="Grid">
-              <Setter Property="Width" Value="80" />
-              <Setter Property="Height" Value="80" />
-              <Style.Triggers>
-                <DataTrigger Binding="{Binding IsNarrow, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                  <Setter Property="Width" Value="58" />
-                  <Setter Property="Height" Value="58" />
-                </DataTrigger>
-              </Style.Triggers>
-            </Style>
-          </Grid.Style>
-          <controls:RingGauge Value="{Binding UsedFraction}" StrokeThickness="8" TrackBrush="{StaticResource RingTrackBrush}">
-            <controls:RingGauge.FillBrush>
-              <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#3BB0FF" Offset="0" />
-                <GradientStop Color="#2275F0" Offset="1" />
-              </LinearGradientBrush>
-            </controls:RingGauge.FillBrush>
-          </controls:RingGauge>
-          <Viewbox Margin="16">
-            <TextBlock Text="{Binding UsedPercentText}" FontWeight="SemiBold" />
-          </Viewbox>
-        </Grid>
-        <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-          <TextBlock Text="Used space" Style="{StaticResource SummaryLabel}" />
-          <TextBlock Text="{Binding UsedText}" Style="{StaticResource SummaryMetric}" AutomationProperties.AutomationId="UsedSpace" />
-          <TextBlock Text="{Binding CapacityText}" Style="{StaticResource SummaryCaption}" />
-        </StackPanel>
-      </Grid>
-    </Border>
+      <!-- Headline: how full the drive is, set like a measurement -->
+      <TextBlock VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis" AutomationProperties.AutomationId="UsedSpace">
+        <Run Text="{Binding UsedText, Mode=OneWay}" FontFamily="{StaticResource NumberFont}" FontSize="38" FontWeight="SemiBold" />
+        <Run Text=" used " FontSize="15" Foreground="{StaticResource TextSecondaryBrush}" />
+        <Run Text="{Binding CapacityText, Mode=OneWay}" FontSize="15" Foreground="{StaticResource TextSecondaryBrush}" />
+      </TextBlock>
 
-    <!-- Low-risk cleanup -->
-    <Border Style="{StaticResource SummaryCard}" ToolTip="{Binding RecoverableDetail}">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Border Style="{StaticResource SummaryTile}" Background="{StaticResource TileGreenBackground}">
-          <Path Data="{StaticResource LeafGeometry}" Stroke="#3DDC84" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="24" Height="24" Stretch="None" />
-        </Border>
-        <StackPanel Grid.Column="1" Style="{StaticResource SummaryText}">
-          <TextBlock Text="Recoverable" Style="{StaticResource SummaryLabel}" />
-          <TextBlock Text="{Binding RecoverableText}" Style="{StaticResource SummaryMetric}" AutomationProperties.AutomationId="Recoverable" />
-          <TextBlock Text="{Binding RecoverableCaption}" Style="{StaticResource SummaryCaption}" />
-        </StackPanel>
-      </Grid>
-    </Border>
+      <!-- Figures beside the headline; under it when the window is narrow -->
+      <StackPanel Orientation="Horizontal">
+        <StackPanel.Style>
+          <Style TargetType="StackPanel">
+            <Setter Property="Grid.Column" Value="1" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsNarrow, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                <Setter Property="Grid.Column" Value="0" />
+                <Setter Property="Grid.ColumnSpan" Value="2" />
+                <Setter Property="Grid.Row" Value="1" />
+                <Setter Property="Margin" Value="0,14,0,0" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </StackPanel.Style>
 
-    <!-- Large files -->
-    <Border Style="{StaticResource SummaryCard}">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Border Style="{StaticResource SummaryTile}" Background="{StaticResource TilePurpleBackground}">
-          <Path Data="{StaticResource FileGeometry}" Stroke="#A78BFA" StrokeThickness="2" StrokeLineJoin="Round" Width="24" Height="24" Stretch="None" />
-        </Border>
-        <StackPanel Grid.Column="1" Style="{StaticResource SummaryText}">
-          <TextBlock Text="Large files" Style="{StaticResource SummaryLabel}" />
-          <TextBlock Text="{Binding LargeFileCountText}" Style="{StaticResource SummaryMetric}" AutomationProperties.AutomationId="LargeFiles" />
-          <TextBlock Text="Files over 1 GB" Style="{StaticResource SummaryCaption}" />
+        <StackPanel ToolTip="{Binding RecoverableDetail}" MinWidth="110">
+          <TextBlock Text="Recoverable" Style="{StaticResource FigureLabel}" />
+          <TextBlock Text="{Binding RecoverableText}" Style="{StaticResource FigureValue}" AutomationProperties.AutomationId="Recoverable" />
+          <TextBlock Text="{Binding RecoverableCaption}" Style="{StaticResource FigureCaption}" />
         </StackPanel>
-      </Grid>
-    </Border>
+        <Border Style="{StaticResource FigureRule}" />
+        <StackPanel MinWidth="90">
+          <TextBlock Text="Large files" Style="{StaticResource FigureLabel}" />
+          <TextBlock Text="{Binding LargeFileCountText}" Style="{StaticResource FigureValue}" AutomationProperties.AutomationId="LargeFiles" />
+          <TextBlock Text="Files over 1 GB" Style="{StaticResource FigureCaption}" />
+        </StackPanel>
+        <Border Style="{StaticResource FigureRule}" />
+        <StackPanel MinWidth="90">
+          <TextBlock Text="Growth" Style="{StaticResource FigureLabel}" />
+          <TextBlock Text="{Binding GrowthText}" Style="{StaticResource FigureValue}" AutomationProperties.AutomationId="Growth" />
+          <TextBlock Text="{Binding GrowthCaption}" Style="{StaticResource FigureCaption}" />
+        </StackPanel>
+      </StackPanel>
 
-    <!-- Growth since the previous scan -->
-    <Border Style="{StaticResource SummaryCard}">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Border Style="{StaticResource SummaryTile}" Background="{StaticResource TileBlueBackground}">
-          <Path Data="{StaticResource TrendGeometry}" Stroke="#5DB5EA" StrokeThickness="2.2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="24" Height="24" Stretch="None" />
-        </Border>
-        <StackPanel Grid.Column="1" Style="{StaticResource SummaryText}">
-          <TextBlock Text="Recent growth" Style="{StaticResource SummaryLabel}" />
-          <TextBlock Text="{Binding GrowthText}" Style="{StaticResource SummaryMetric}" AutomationProperties.AutomationId="Growth" />
-          <TextBlock Text="{Binding GrowthCaption}" Style="{StaticResource SummaryCaption}" />
+      <!-- The drive as one bar: largest folders, the rest, then free space -->
+      <controls:CapacityBar Grid.Row="2"
+                            Grid.ColumnSpan="2"
+                            Height="14"
+                            Margin="0,18,0,0"
+                            CornerRadius="4"
+                            Segments="{Binding Segments}"
+                            TrackBrush="{StaticResource CapacityTrackBrush}"
+                            AutomationProperties.Name="Drive usage" />
+
+      <DockPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="0,10,0,0" LastChildFill="True">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,2,0,0">
+          <Border Width="9" Height="9" CornerRadius="2" Background="{StaticResource CapacityTrackBrush}" BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding FreeText}" FontFamily="{StaticResource NumberFont}" FontSize="13.5" Margin="8,0,0,0" VerticalAlignment="Center" AutomationProperties.AutomationId="FreeSpace">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding IsLowOnSpace}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
         </StackPanel>
-      </Grid>
-    </Border>
-  </UniformGrid>
+
+        <ItemsControl ItemsSource="{Binding Segments}" Focusable="False">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type vm:CapacitySegment}">
+              <StackPanel Orientation="Horizontal" Margin="0,2,22,2">
+                <Border Width="9" Height="9" CornerRadius="2" Background="{Binding Color, Converter={StaticResource ColorToBrush}}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Secondary}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding SizeText}" FontFamily="{StaticResource NumberFont}" FontSize="13.5" Margin="7,0,0,0" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </DockPanel>
+    </Grid>
+  </Border>
 </UserControl>

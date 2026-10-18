@@ -10,7 +10,7 @@
   <UserControl.Resources>
     <!-- One template per message kind -->
     <DataTemplate x:Key="UserMessage" DataType="{x:Type vm:ChatMessageViewModel}">
-      <Border HorizontalAlignment="Right" MaxWidth="290" Margin="40,6,0,6" Padding="12,8" CornerRadius="12,12,4,12" Background="#1A3354">
+      <Border HorizontalAlignment="Right" MaxWidth="290" Margin="40,6,0,6" Padding="12,8" CornerRadius="12,12,4,12" Background="#1F3150">
         <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
       </Border>
     </DataTemplate>
@@ -21,7 +21,7 @@
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <Border Width="34" Height="34" CornerRadius="9" Background="#1A2A40" VerticalAlignment="Top">
+        <Border Width="34" Height="34" CornerRadius="9" Background="#22272E" VerticalAlignment="Top">
           <Path Data="{StaticResource SparkleGeometry}" Fill="{StaticResource AccentHoverBrush}" Width="18" Height="18" Stretch="Uniform" />
         </Border>
         <StackPanel Grid.Column="1" Margin="12,0,0,0">
@@ -30,7 +30,7 @@
                      controls:ChatText.LinkBrush="{StaticResource AccentHoverBrush}"
                      TextWrapping="Wrap"
                      LineHeight="20"
-                     Foreground="#D5DEEA" />
+                     Foreground="#D3D8DE" />
 
           <!-- Plan steps, numbered like the reference design -->
           <ItemsControl ItemsSource="{Binding Steps}" Margin="0,8,0,0" Visibility="{Binding HasSteps, Converter={StaticResource BoolToVisibility}}">
@@ -42,7 +42,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                   </Grid.ColumnDefinitions>
-                  <Border Width="30" Height="30" CornerRadius="15" Background="#1C2A3C" VerticalAlignment="Top">
+                  <Border Width="30" Height="30" CornerRadius="15" Background="#22272E" VerticalAlignment="Top">
                     <TextBlock Text="{Binding Number}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
                   </Border>
                   <StackPanel Grid.Column="1" Margin="12,0,8,0">
@@ -94,14 +94,14 @@
     </DataTemplate>
 
     <DataTemplate x:Key="ErrorMessage" DataType="{x:Type vm:ChatMessageViewModel}">
-      <Border Margin="0,6" Padding="12,9" CornerRadius="10" Background="#3A1D24" BorderBrush="#6B2F38" BorderThickness="1">
+      <Border Margin="0,6" Padding="12,9" CornerRadius="8" Background="#33191C" BorderBrush="#5E2A2F" BorderThickness="1">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
           <TextBlock Text="&#xE7BA;" Style="{StaticResource Text.Glyph}" FontSize="13" Foreground="{StaticResource DangerBrush}" VerticalAlignment="Top" Margin="0,2,10,0" />
-          <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" Foreground="#F3C9CC" />
+          <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" Foreground="#F5CACA" />
         </Grid>
       </Border>
     </DataTemplate>
@@ -174,7 +174,7 @@
           <ItemsControl ItemsSource="{Binding Messages}" ItemTemplateSelector="{StaticResource MessageTemplates}" AutomationProperties.AutomationId="AssistantMessages" />
 
           <!-- Consent before the first Claude request -->
-          <Border Margin="0,8,0,4" Padding="14,12" CornerRadius="10" Background="#14273F" BorderBrush="{StaticResource SelectionBorderBrush}" BorderThickness="1"
+          <Border Margin="0,8,0,4" Padding="14,12" CornerRadius="8" Background="#1A2638" BorderBrush="{StaticResource SelectionBorderBrush}" BorderThickness="1"
                   Visibility="{Binding NeedsConsent, Converter={StaticResource BoolToVisibility}}">
             <StackPanel>
               <TextBlock Text="Share scan details with Claude?" FontWeight="SemiBold" />

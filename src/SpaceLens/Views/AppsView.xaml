@@ -63,7 +63,7 @@
             <DataGridTemplateColumn Header="Size" Width="104" SortMemberPath="SizeBytes" SortDirection="Descending">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate DataType="{x:Type vm:AppItemViewModel}">
-                  <TextBlock Text="{Binding SizeText}" ToolTip="{Binding SizeTooltip}" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding SizeText}" ToolTip="{Binding SizeTooltip}" Style="{StaticResource Text.Number}" VerticalAlignment="Center" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
@@ -98,7 +98,7 @@
             <DataGridTemplateColumn Width="128" CanUserSort="False" CanUserResize="False">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate DataType="{x:Type vm:AppItemViewModel}">
-                  <Button Content="Uninstall…" Padding="12,5" FontSize="12" HorizontalAlignment="Right" Margin="0,0,10,0"
+                  <Button Content="Uninstall…" Style="{StaticResource Button.Ghost}" Padding="12,5" FontSize="12" HorizontalAlignment="Right" Margin="0,0,10,0"
                           Command="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                           CommandParameter="{Binding}"
                           IsEnabled="{Binding CanUninstall}" />
