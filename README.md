@@ -1,16 +1,27 @@
 # SpaceLens
 
-A native Windows storage manager: it scans a drive in seconds, shows where the space went in a folder hierarchy, finds what is safe to clean, and lets you ask **Claude Haiku 5.5** about your storage.
+A Windows app that shows what is filling your drive and how to free space safely, with **Claude Haiku 5.5** to answer questions about your storage.
+
+**Why it exists.** Windows doesn't show where your space goes. File Explorer has no folder sizes, Storage settings sorts everything into a few broad groups such as "Apps" and "Other", and nothing tells you what is safe to delete, so people delete the wrong thing or buy a bigger drive. SpaceLens scans a drive in seconds, lists every folder and file by size (or as a map), gives each item a cleanup risk with the reason, plans the lowest-risk way to free the space you need, and explains the rest in plain words. Nothing is removed without your confirmation, and removals go to the Recycle Bin.
 
 Built with **C# 13, .NET 9, WPF/XAML, CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection, SQLite and Windows DPAPI**. No browser, web server, Node or Rust. Scanning, the explorer, cleanup planning, history and duplicates all work offline; only Claude requests need the internet.
 
 Two illustrated pages (open them in a browser): [`docs/features.html`](docs/features.html) explains every feature for people using the app, and [`docs/how-it-works.html`](docs/how-it-works.html) covers the technical details (architecture, scanner, cleanup engine, history, the Claude integration and Windows integration).
 
-![UI reference](references/ui-reference.png)
+## Install
 
-## Quick start
+You need 64-bit Windows 10 or 11 and nothing else (no .NET, no Docker).
 
-Double-click **`run.cmd`**. It builds SpaceLens when needed (with the .NET 9 SDK, or Docker if the SDK isn't installed) and starts it: the first time, and again whenever a file under `src` changed since the last build, so it always opens the newest version. `run.cmd --rebuild` builds even when nothing changed.
+1. Download [`dist/SpaceLens.zip`](dist/SpaceLens.zip) (on GitHub: open the file › **Download raw file**).
+2. Right-click the zip › **Extract All…**
+3. Double-click **SpaceLens.exe**. If Windows says "Windows protected your PC", click **More info › Run anyway**; the app isn't code-signed, so Windows doesn't recognise it yet.
+4. Choose **Install**. SpaceLens opens, with shortcuts on the desktop and in the Start menu and "Analyze with SpaceLens" in File Explorer's right-click menu (on Windows 11 under Show more options). No administrator rights are needed.
+
+**Not now** runs it without installing. To **update**, start a newer SpaceLens.exe and choose Update. To **uninstall**, use Windows Settings › Apps › SpaceLens › Uninstall (scan history and settings are kept). The AI assistant needs your own Anthropic API key (Settings › AI Assistant); without one, everything else works and the assistant answers offline.
+
+## Run from source
+
+Double-click **`run.cmd`**. It builds SpaceLens when needed (with the .NET 9 SDK, or Docker if the SDK isn't installed) and starts it: the first time, and again whenever a file under `src` changed since the last build, so it always opens the newest version. `run.cmd --rebuild` builds even when nothing changed. The build offers to install or update the installed copy, like a downloaded SpaceLens.exe.
 
 ## Send it to someone
 
@@ -21,7 +32,7 @@ Double-click **`package.cmd`**. It builds `dist\SpaceLens.zip` (about 60 MB) wit
 
 The latest zip is also committed to this repository as [`dist/SpaceLens.zip`](dist/SpaceLens.zip), so anyone can download it from GitHub (open the file › Download raw file) or take it from a clone, without building anything. Run `package.cmd` again before committing source changes so it stays current.
 
-They unzip it, double-click `SpaceLens.exe` and choose **Install**; SpaceLens opens and its shortcut is on the desktop, with the same icon as the app everywhere. **Not now** runs it without installing (it doesn't ask again for that version), and Settings can install it later. A build started by `run.cmd` makes the same offer, so your installed copy can follow your source changes. The build isn't code-signed, so Windows SmartScreen may ask them to confirm (More info › Run anyway).
+They follow the [Install](#install) steps above. **Not now** doesn't ask again for that version, and Settings can install it later.
 
 ## Build, run, test, publish
 
@@ -139,7 +150,7 @@ references/ui-reference.png         design reference
 scripts/SmokeTest.ps1               UI Automation smoke test
 scripts/MakeIcon.ps1                makes Assets\SpaceLens.ico (exe and desktop icon) from the in-app logo
 run.cmd / package.cmd               start the newest build / make dist\SpaceLens.zip to send to someone
-packaging/                          what goes in the zip besides SpaceLens.exe (installer script, README)
+packaging/                          what goes in the zip besides SpaceLens.exe (the recipient's README)
 dist/SpaceLens.zip                  the latest package, committed so it can be downloaded without building
 docs/                               features.html (for users) and how-it-works.html (technical details)
 src/SpaceLens.Core/
