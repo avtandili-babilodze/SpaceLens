@@ -4,7 +4,9 @@ artifacts/
 .vs/
 TestResults/
 node_modules/
-dist/
+# package.cmd output; the zip itself is committed so people can download SpaceLens without building it
+dist/*
+!dist/SpaceLens.zip
 target/
 *.user
 *.log

@@ -4,6 +4,8 @@ A native Windows storage manager: it scans a drive in seconds, shows where the s
 
 Built with **C# 13, .NET 9, WPF/XAML, CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection, SQLite and Windows DPAPI**. No browser, web server, Node or Rust. Scanning, the explorer, cleanup planning, history and duplicates all work offline; only Claude requests need the internet.
 
+Two illustrated pages (open them in a browser): [`docs/features.html`](docs/features.html) explains every feature for people using the app, and [`docs/how-it-works.html`](docs/how-it-works.html) covers the technical details (architecture, scanner, cleanup engine, history, the Claude integration and Windows integration).
+
 ![UI reference](references/ui-reference.png)
 
 ## Quick start
@@ -17,6 +19,8 @@ Double-click **`package.cmd`**. It builds `dist\SpaceLens.zip` (about 60 MB) wit
 * `SpaceLens.exe`: self-contained, so the other PC needs nothing but Windows 10 or 11 (64-bit);
 * `Install SpaceLens.cmd`: installs it for that Windows user, with no administrator rights: a copy in `%LOCALAPPDATA%\Programs\SpaceLens`, desktop and Start menu shortcuts, "Analyze with SpaceLens" in File Explorer's right-click menu and an entry in Settings › Apps (whose Uninstall removes all of it again, keeping scan history and settings);
 * `README.txt` with those steps for the recipient.
+
+The latest zip is also committed to this repository as [`dist/SpaceLens.zip`](dist/SpaceLens.zip), so anyone can download it from GitHub (open the file › Download raw file) or take it from a clone, without building anything. Run `package.cmd` again before committing source changes so it stays current.
 
 They unzip it and double-click `Install SpaceLens.cmd`; SpaceLens opens and its shortcut is on the desktop. `SpaceLens.exe` also runs without installing, and can install itself later from Settings. The build isn't code-signed, so Windows SmartScreen may ask them to confirm (More info › Run anyway).
 
@@ -137,6 +141,8 @@ scripts/SmokeTest.ps1               UI Automation smoke test
 scripts/MakeIcon.ps1                makes Assets\SpaceLens.ico (exe and desktop icon) from the in-app logo
 run.cmd / package.cmd               start the newest build / make dist\SpaceLens.zip to send to someone
 packaging/                          what goes in the zip besides SpaceLens.exe (installer script, README)
+dist/SpaceLens.zip                  the latest package, committed so it can be downloaded without building
+docs/                               features.html (for users) and how-it-works.html (technical details)
 src/SpaceLens.Core/
   Configuration/                    AppPaths (%LOCALAPPDATA%\SpaceLens)
   DependencyInjection/              AddSpaceLensCore()

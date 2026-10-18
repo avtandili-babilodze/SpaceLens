@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpaceLens Features</title>
+<meta name="description" content="Everything SpaceLens does: see what fills your drive, free space safely, and ask Claude about your storage.">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0E1621;
+    --surface: #121C28;
+    --raised: #16212F;
+    --hover: #192636;
+    --border: #1E2A3A;
+    --border-strong: #2A3A50;
+    --text: #E8EEF6;
+    --text-2: #A4B4C8;
+    --text-3: #6C7E94;
+    --accent: #2F8CFF;
+    --accent-hi: #4C9DFF;
+    --sky: #38B2FF;
+    --deep: #1660E0;
+    --low-bg: #0E3527; --low: #4FD69C;
+    --review-bg: #3A2C0E; --review: #F5BF4F;
+    --high-bg: #3D1B22; --high: #FF8F94;
+    --prot-bg: #1B2738; --prot: #93A7C3;
+    --radius: 16px;
+    --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: var(--accent-hi); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd { font-family: var(--mono); font-size: .88em; }
+  code { background: var(--raised); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; color: #CFE0F5; white-space: nowrap; }
+  kbd { background: var(--raised); border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  @media (min-width: 640px) { .wrap { padding: 0 28px; } }
+  svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  svg.i.fill { fill: currentColor; stroke: none; }
+
+  /* Top bar */
+  .top {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(14, 22, 33, .86);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .top .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; font-size: 17px; }
+  .brand:hover { text-decoration: none; }
+  .brand svg { width: 30px; height: 30px; }
+  .top nav { margin-left: auto; display: flex; gap: 4px; }
+  .top nav a { color: var(--text-2); padding: 6px 12px; border-radius: 8px; font-size: 14px; white-space: nowrap; }
+  .top nav a:hover { background: var(--hover); color: var(--text); text-decoration: none; }
+  .top nav a[aria-current] { color: var(--text); background: var(--raised); }
+
+  /* Hero */
+  .hero { padding: 72px 0 40px; position: relative; }
+  .hero::before {
+    content: ""; position: absolute; top: -60px; left: 50%; width: 100vw; height: 520px; transform: translateX(-50%); z-index: -1;
+    background: radial-gradient(700px 300px at 30% 35%, rgba(47, 140, 255, .16), transparent 70%),
+                radial-gradient(600px 280px at 80% 10%, rgba(56, 178, 255, .09), transparent 70%);
+  }
+  .eyebrow { color: var(--sky); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 12px; }
+  h1 { font-family: var(--display); font-size: clamp(2.1rem, 5.4vw, 3.5rem); line-height: 1.08; letter-spacing: -.025em; margin: 0 0 20px; max-width: 16ch; font-weight: 650; }
+  h1 em { font-style: normal; background: linear-gradient(90deg, var(--sky), var(--accent-hi)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { font-size: clamp(1.05rem, 2vw, 1.2rem); color: var(--text-2); max-width: 62ch; margin: 0 0 28px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .pills li { display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); font-size: 14px; color: var(--text-2); }
+  .pills svg { width: 16px; height: 16px; color: var(--low); }
+
+  /* Section index */
+  .index { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 40px 0 0; }
+  .index a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); font-size: 14px; }
+  .index a:hover { border-color: var(--border-strong); background: var(--hover); text-decoration: none; }
+  .index svg { color: var(--accent-hi); }
+
+  /* Groups */
+  section.group { padding: 72px 0 8px; }
+  .group-head { margin-bottom: 28px; max-width: 70ch; }
+  h2 { font-family: var(--display); font-size: clamp(1.6rem, 3.4vw, 2.2rem); line-height: 1.15; letter-spacing: -.02em; margin: 0 0 10px; font-weight: 650; }
+  .group-head p { color: var(--text-2); margin: 0; }
+  h3 { font-size: 1.2rem; line-height: 1.3; margin: 0 0 8px; font-weight: 600; letter-spacing: -.01em; }
+  h3 .tag { font-size: 12px; font-weight: 600; color: var(--sky); letter-spacing: .06em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+
+  .feature {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 36px; align-items: center;
+    padding: 32px; margin-bottom: 16px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .feature.flip > .copy { order: 2; }
+  .feature p { color: var(--text-2); margin: 0 0 12px; }
+  .feature ul, .card ul { margin: 0; padding: 0; list-style: none; color: var(--text-2); }
+  .feature li, .card li { position: relative; padding-left: 20px; margin: 6px 0; }
+  .feature li::before, .card li::before { content: ""; position: absolute; left: 4px; top: .68em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .howto { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: var(--raised); border: 1px solid var(--border); font-size: 14px; color: var(--text-2); }
+  .howto b { color: var(--text); font-weight: 600; }
+  @media (max-width: 860px) {
+    .feature { grid-template-columns: minmax(0, 1fr); padding: 22px; gap: 24px; }
+    .feature.flip > .copy { order: 0; }
+  }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-bottom: 16px; }
+  .cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 720px) { .cards.two { grid-template-columns: minmax(0, 1fr); } }
+  .card { padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .card .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 14px; background: rgba(47, 140, 255, .12); color: var(--accent-hi); }
+  .card .ic svg { width: 22px; height: 22px; }
+  .card p { color: var(--text-2); margin: 0 0 10px; font-size: 15px; }
+  .card p:last-child { margin-bottom: 0; }
+  .card li { font-size: 15px; }
+
+  /* Mock-ups */
+  .mock { background: var(--bg); border: 1px solid var(--border-strong); border-radius: 14px; padding: 18px; font-size: 13px; color: var(--text-2); box-shadow: 0 20px 50px -24px rgba(0, 0, 0, .6); min-width: 0; }
+  .mock .bar { display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; color: var(--text-3); font-size: 12px; }
+  .mock .bar b { color: var(--text); font-size: 13px; font-weight: 600; }
+  .mock .bar .sp { margin-left: auto; }
+  .example { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; }
+
+  .badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .badge.low { background: var(--low-bg); color: var(--low); }
+  .badge.review { background: var(--review-bg); color: var(--review); }
+  .badge.high { background: var(--high-bg); color: var(--high); }
+  .badge.prot { background: var(--prot-bg); color: var(--prot); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--border-strong); color: var(--text); background: var(--raised); white-space: nowrap; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Overview mock */
+  .ov { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 18px; align-items: center; }
+  .ring { position: relative; width: 132px; height: 132px; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .lbl { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ring .lbl b { font-size: 26px; color: var(--text); line-height: 1; font-weight: 650; }
+  .ring .lbl span { font-size: 12px; }
+  .stats { display: grid; gap: 8px; }
+  .stat { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+  .stat b { color: var(--text); font-weight: 600; white-space: nowrap; }
+  .stat b.up { color: var(--review); }
+  .stat b.ok { color: var(--low); }
+  .tbl { margin-top: 14px; border-top: 1px solid var(--border); }
+  .tbl div { display: grid; grid-template-columns: minmax(0, 1fr) 70px 104px; gap: 10px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--border); }
+  .tbl span:first-child { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tbl span:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
+  .meter { height: 4px; border-radius: 4px; background: var(--border); margin-top: 4px; overflow: hidden; }
+  .meter i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  @media (max-width: 460px) { .ov { grid-template-columns: minmax(0, 1fr); justify-items: center; } .stats { width: 100%; } }
+
+  /* Map mock */
+  .map svg { width: 100%; height: auto; display: block; border-radius: 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+  .seg span { padding: 3px 10px; font-size: 12px; }
+  .seg span.on { background: var(--raised); color: var(--text); }
+
+  /* Risk band */
+  .risks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .risk { padding: 20px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); border-top: 3px solid; }
+  .risk.low { border-top-color: var(--low); }
+  .risk.review { border-top-color: var(--review); }
+  .risk.high { border-top-color: var(--high); }
+  .risk.prot { border-top-color: var(--prot); }
+  .risk p { margin: 12px 0 8px; color: var(--text); font-size: 15px; }
+  .risk small { color: var(--text-3); font-size: 13px; line-height: 1.5; display: block; }
+  @media (max-width: 960px) { .risks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 520px) { .risks { grid-template-columns: minmax(0, 1fr); } }
+
+  /* Goal solver mock */
+  .goal { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; color: var(--text); }
+  .input { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--surface); color: var(--text); font-weight: 600; min-width: 80px; }
+  .summary { padding: 10px 12px; border-radius: 10px; background: rgba(47, 140, 255, .08); border: 1px solid rgba(47, 140, 255, .25); color: var(--text-2); margin-bottom: 12px; }
+  .steps { display: grid; gap: 6px; }
+  .step { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+  .step .n { width: 22px; height: 22px; border-radius: 50%; background: var(--raised); display: grid; place-items: center; font-size: 11px; color: var(--text); font-weight: 600; }
+  .step .t { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .step .s { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+  @media (max-width: 460px) { .step { grid-template-columns: 22px minmax(0, 1fr) auto; } .step .badge { grid-column: 2 / -1; justify-self: start; } }
+
+  /* Chat mock */
+  .chat { display: flex; flex-direction: column; gap: 12px; }
+  .chat .q { align-self: flex-end; max-width: 80%; padding: 9px 14px; border-radius: 14px 14px 4px 14px; background: var(--accent); color: #fff; font-size: 13.5px; }
+  .chat .a { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+  .chat .av { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(135deg, var(--sky), var(--deep)); color: #fff; }
+  .chat .av svg { width: 16px; height: 16px; }
+  .chat .body { padding: 12px 14px; border-radius: 4px 14px 14px 14px; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); font-size: 13.5px; }
+  .chat .body p { margin: 0 0 8px; color: var(--text-2); }
+  .chat .link { color: var(--accent-hi); border-bottom: 1px dashed rgba(76, 157, 255, .5); }
+  .chat .plan { display: grid; gap: 5px; margin: 10px 0 12px; }
+  .chat .plan div { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 9px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); }
+  .chat .plan span:first-child { min-width: 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chat .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chat .ask { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-3); }
+  .chat .ask .send { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; color: #fff; }
+  .chat .ask .send svg { width: 16px; height: 16px; }
+  .caret { display: inline-block; width: 7px; height: 14px; background: var(--accent-hi); vertical-align: -2px; margin-left: 2px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } html { scroll-behavior: auto; } }
+
+  /* Rows (apps, system space) */
+  .rows { display: grid; gap: 6px; }
+  .row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+  .row .ico { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px; }
+  .row .ico svg { width: 18px; height: 18px; }
+  .row > span:nth-child(2) { min-width: 0; }
+  .row .name, .row .sub { display: block; }
+  .row .name { color: var(--text); font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .sub { font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .right { text-align: right; display: grid; gap: 4px; justify-items: end; }
+  .row .right .sub { white-space: normal; max-width: 120px; }
+  .row .size { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .row .stale { color: var(--review); }
+
+  /* Alert mock */
+  .desk { position: relative; border-radius: 12px; overflow: hidden; min-height: 250px; background: linear-gradient(160deg, #13304f 0%, #0f2038 45%, #0b1626 100%); border: 1px solid var(--border-strong); }
+  .desk::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 30px; background: rgba(10, 16, 26, .9); border-top: 1px solid rgba(255, 255, 255, .06); }
+  .toast { position: absolute; right: 14px; bottom: 44px; width: min(300px, calc(100% - 28px)); padding: 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border-strong); box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .7); }
+  .toast .hd { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-3); margin-bottom: 10px; }
+  .toast .hd svg { width: 20px; height: 20px; }
+  .toast .hd b { color: var(--text); font-weight: 600; }
+  .toast .ttl { color: var(--text); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .toast p { margin: 0 0 12px; font-size: 12.5px; color: var(--text-2); }
+  .toast .btns { display: flex; gap: 8px; }
+
+  /* Context menu mock */
+  .ctx { width: min(280px, 100%); margin: 0 auto; padding: 6px; border-radius: 10px; background: #1f2a38; border: 1px solid #33445a; box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .7); font-size: 13px; color: var(--text); }
+  .ctx div { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; }
+  .ctx div.hl { background: rgba(47, 140, 255, .22); }
+  .ctx div svg { width: 16px; height: 16px; color: var(--text-2); }
+  .ctx hr { border: 0; border-top: 1px solid #33445a; margin: 4px 6px; }
+
+  /* Install */
+  .install { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 860px) { .install { grid-template-columns: minmax(0, 1fr); } }
+  ol.steps-list { counter-reset: s; list-style: none; margin: 14px 0 0; padding: 0; }
+  ol.steps-list li { counter-increment: s; position: relative; padding: 0 0 14px 40px; color: var(--text-2); }
+  ol.steps-list li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 13px; font-weight: 700; }
+  ol.steps-list li b { color: var(--text); }
+  .note { margin-top: 6px; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(245, 191, 79, .3); background: rgba(245, 191, 79, .07); color: var(--text-2); font-size: 14px; }
+
+  /* Promises */
+  .promises { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 10px; }
+  .promise { display: flex; gap: 12px; padding: 16px 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text-2); font-size: 15px; }
+  .promise svg { color: var(--low); margin-top: 2px; }
+  .promise b { color: var(--text); font-weight: 600; }
+
+  footer { margin-top: 80px; border-top: 1px solid var(--border); padding: 28px 0 48px; color: var(--text-3); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+  footer .sp { margin-left: auto; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38B2FF"/><stop offset="1" stop-color="#1660E0"/>
+    </linearGradient>
+  </defs>
+  <symbol id="logo" viewBox="0 0 38 38">
+    <rect width="38" height="38" rx="11" fill="url(#logoGrad)"/>
+    <circle cx="19" cy="19" r="8.4" fill="none" stroke="#fff" stroke-width="3.2"/>
+    <circle cx="24.5" cy="13.5" r="3" fill="#fff"/>
+  </symbol>
+  <symbol id="i-drive" viewBox="0 0 24 24"><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M5 13 7.5 5h9L19 13"/><circle cx="16.5" cy="16.5" r=".6"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18M12 10h9M3 14h9M16.5 10v11"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+  <symbol id="i-details" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V11M10.5 20V5M16 20v-6M3 20h18"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><path d="M3 12h13M12 7l5 5-5 5M20 5v14"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4h4M12 8v4l3 2"/></symbol>
+  <symbol id="i-apps" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-system" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-cursor" viewBox="0 0 24 24"><path d="M5 3l14 7-6 2-2 6z"/></symbol>
+  <symbol id="i-install" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-offline" viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.2" r=".6"/><path d="M3 3l18 18"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M10,4 Q11,11 18,12 Q11,13 10,20 Q9,13 2,12 Q9,11 10,4 Z M19,1.5 Q19.4,4.6 22.5,5 Q19.4,5.4 19,8.5 Q18.6,5.4 15.5,5 Q18.6,4.6 19,1.5 Z"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top"><svg aria-hidden="true"><use href="#logo"/></svg>SpaceLens</a>
+    <nav aria-label="Pages">
+      <a href="features.html" aria-current="page">Features</a>
+      <a href="how-it-works.html">How it works</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <section class="hero">
+      <p class="eyebrow">Storage explorer for Windows 10 and 11</p>
+      <h1>See what's filling your drive, and <em>free space safely</em>.</h1>
+      <p class="lead">SpaceLens measures every folder on a drive in seconds, shows where the space went, tells you what is safe to clean and what isn't, and lets you ask Claude about it in plain words. Nothing is ever removed without your OK.</p>
+      <ul class="pills">
+        <li><svg class="i"><use href="#i-check"/></svg>Works offline</li>
+        <li><svg class="i"><use href="#i-check"/></svg>Nothing removed without your OK</li>
+        <li><svg class="i"><use href="#i-check"/></svg>Undo from the Recycle Bin</li>
+        <li><svg class="i"><use href="#i-check"/></svg>No administrator rights needed</li>
+        <li><svg class="i"><use href="#i-check"/></svg>Your files never leave your PC</li>
+      </ul>
+
+      <nav class="index" aria-label="Features">
+        <a href="#install"><svg class="i"><use href="#i-install"/></svg>Install</a>
+        <a href="#overview"><svg class="i"><use href="#i-home"/></svg>Overview</a>
+        <a href="#folders"><svg class="i"><use href="#i-map"/></svg>Folders &amp; map</a>
+        <a href="#risk"><svg class="i"><use href="#i-shield"/></svg>Cleanup risk</a>
+        <a href="#cleanup"><svg class="i"><use href="#i-target"/></svg>Goal solver</a>
+        <a href="#apps"><svg class="i"><use href="#i-apps"/></svg>Apps</a>
+        <a href="#system"><svg class="i"><use href="#i-system"/></svg>System space</a>
+        <a href="#assistant"><svg class="i fill"><use href="#i-sparkle"/></svg>AI assistant</a>
+        <a href="#alerts"><svg class="i"><use href="#i-bell"/></svg>Daily alerts</a>
+        <a href="#promises"><svg class="i"><use href="#i-lock"/></svg>Safety</a>
+      </nav>
+    </section>
+
+    <!-- Install -->
+    <section class="group" id="install">
+      <div class="group-head">
+        <p class="eyebrow">Get started</p>
+        <h2>Install it in a minute</h2>
+        <p>SpaceLens is one program file with everything inside it. The other PC needs nothing installed first, just 64-bit Windows 10 or 11.</p>
+      </div>
+      <div class="install">
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-install"/></svg></div>
+          <h3>Someone sent you SpaceLens.zip</h3>
+          <ol class="steps-list">
+            <li>Right-click <b>SpaceLens.zip</b> and choose <b>Extract All…</b> Opening the zip and running the installer from inside it doesn't work.</li>
+            <li>In the extracted folder, double-click <b>Install SpaceLens.cmd</b>.</li>
+            <li>SpaceLens opens. Its shortcut is now on your desktop and in the Start menu.</li>
+          </ol>
+          <p class="note">Windows may say <b>"Windows protected your PC"</b>, because the app isn't signed by a publisher it recognises. Click <b>More info</b>, then <b>Run anyway</b>.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-folder"/></svg></div>
+          <h3>You have the GitHub repository</h3>
+          <ul>
+            <li><b>Quickest:</b> the ready-made zip is in the repository at <code>dist\SpaceLens.zip</code>. Follow the steps on the left; no building needed. On GitHub, open the file and click <b>Download raw file</b>.</li>
+            <li><b>From the source code:</b> double-click <code>run.cmd</code>. It builds SpaceLens the first time (needs the <a href="https://dotnet.microsoft.com/download/dotnet/9.0">.NET 9 SDK</a> or Docker Desktop) and opens it. Later it opens straight away, and rebuilds by itself after any change to the code.</li>
+            <li>To install that build with shortcuts, open <b>Settings › SpaceLens on this PC › Install</b>, or run <code>package.cmd</code> to make a fresh zip.</li>
+          </ul>
+          <div class="howto"><b>Removing it:</b> Windows Settings › Apps › SpaceLens › Uninstall. Shortcuts, the right-click entry and the program go away; your scan history and settings stay, in case you install it again.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- See -->
+    <section class="group" id="see">
+      <div class="group-head">
+        <p class="eyebrow">See where the space went</p>
+        <h2>Every folder, measured</h2>
+        <p>Pick a drive and press <b>Scan</b> (or <kbd>F5</kbd>), or choose any folder. A full system drive takes seconds, and everything below stays fast because the whole scan is kept in memory.</p>
+      </div>
+
+      <article class="feature" id="overview">
+        <div class="copy">
+          <h3><span class="tag">Overview page</span>The whole drive at a glance</h3>
+          <p>The first page shows how full the drive is and where to start.</p>
+          <ul>
+            <li><b>Used space</b> ring from Windows' own numbers.</li>
+            <li><b>Recoverable:</b> how much low-risk cleanup is available right now.</li>
+            <li><b>Large files:</b> how many files are over 1 GB.</li>
+            <li><b>Recent growth</b> since your previous scan of the same drive.</li>
+            <li>A folder tree and a sortable table with size, type, date and cleanup risk for every item, plus a details panel with a breakdown and the largest files inside the selection.</li>
+          </ul>
+        </div>
+        <div class="mock" aria-label="Illustration of the Overview page">
+          <div class="bar"><b>Windows (C:)</b><span class="sp example">Example</span></div>
+          <div class="ov">
+            <div class="ring">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#1E2A3A" stroke-width="12"/>
+                <circle cx="60" cy="60" r="48" fill="none" stroke="url(#ringGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="277.5 301.6"/>
+                <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38B2FF"/><stop offset="1" stop-color="#1660E0"/></linearGradient></defs>
+              </svg>
+              <div class="lbl"><b>92%</b><span>used</span></div>
+            </div>
+            <div class="stats">
+              <div class="stat"><span>Recoverable</span><b class="ok">18.4 GB</b></div>
+              <div class="stat"><span>Files over 1 GB</span><b>23</b></div>
+              <div class="stat"><span>Recent growth</span><b class="up">+3.1 GB</b></div>
+            </div>
+          </div>
+          <div class="tbl">
+            <div><span>Users</span><span>182 GB</span><span class="badge high">High Risk</span></div>
+            <div><span>Program Files</span><span>64.7 GB</span><span class="badge prot">Protected</span></div>
+            <div><span>Windows</span><span>31.2 GB</span><span class="badge prot">Protected</span></div>
+            <div><span>$Recycle.Bin</span><span>2.3 GB</span><span class="badge low">Low Risk</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature flip" id="folders">
+        <div class="copy">
+          <h3><span class="tag">Folders page</span>Browse as a list or as a map</h3>
+          <p>Go into any folder with breadcrumbs and the Up button, sort by any column, filter (folders, files, over 1 GB, cleanup candidates), and search names across the whole scan.</p>
+          <p>Switch <b>List | Map</b> to see the folder as tiles: the bigger the tile, the more space it uses. Colors show the file type, and big folders show their contents inside them, so you spot the space hogs at once.</p>
+          <ul>
+            <li>Click a tile to select it, double-click to open it.</li>
+            <li>Right-click anything for: Open, Reveal in File Explorer, Copy path, Ask AI about this, Move to Recycle Bin…, Move to another drive…, Never suggest for cleanup.</li>
+            <li>Tick check boxes to act on many items at once.</li>
+          </ul>
+        </div>
+        <div class="mock map" aria-label="Illustration of the storage map">
+          <div class="bar"><b>C:\Users\Alex</b><span class="sp seg"><span>List</span><span class="on">Map</span></span></div>
+          <svg viewBox="0 0 320 200" role="img" aria-label="Tiles sized by folder size">
+            <g stroke="#0E1621" stroke-width="2">
+              <rect x="0" y="0" width="176" height="200" fill="#9B7BF7" fill-opacity=".22"/>
+              <rect x="4" y="18" width="104" height="178" fill="#9B7BF7"/>
+              <rect x="108" y="18" width="64" height="104" fill="#9B7BF7" fill-opacity=".85"/>
+              <rect x="108" y="122" width="64" height="74" fill="#9B7BF7" fill-opacity=".7"/>
+              <rect x="176" y="0" width="144" height="92" fill="#38BDF8"/>
+              <rect x="176" y="92" width="84" height="108" fill="#F5C451"/>
+              <rect x="260" y="92" width="60" height="62" fill="#60A5FA"/>
+              <rect x="260" y="154" width="60" height="46" fill="#F472B6"/>
+            </g>
+            <g font-family="Segoe UI, system-ui, sans-serif" font-size="11" font-weight="600" fill="#0E1621">
+              <text x="8" y="13" fill="#E8EEF6">Videos · 96 GB</text>
+              <text x="10" y="34">Holiday 2024.mp4</text>
+              <text x="114" y="34">Clips</text>
+              <text x="114" y="138">Old</text>
+              <text x="182" y="16">Pictures · 41 GB</text>
+              <text x="182" y="108">Downloads</text>
+              <text x="266" y="108">Docs</text>
+              <text x="266" y="170">Music</text>
+            </g>
+          </svg>
+          <div class="legend">
+            <span><i style="background:#9B7BF7"></i>Videos</span>
+            <span><i style="background:#38BDF8"></i>Pictures</span>
+            <span><i style="background:#F5C451"></i>Archives</span>
+            <span><i style="background:#60A5FA"></i>Documents</span>
+            <span><i style="background:#F472B6"></i>Music</span>
+            <span><i style="background:#2F8CFF"></i>Apps</span>
+            <span><i style="background:#34D399"></i>Code</span>
+          </div>
+        </div>
+      </article>
+
+      <div class="cards">
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-bolt"/></svg></div>
+          <h3>Fast, honest scans</h3>
+          <ul>
+            <li>Several folders are read at the same time, so a full drive takes seconds.</li>
+            <li>Folders Windows won't let you read are marked <b>No access</b>, not guessed.</li>
+            <li>Shortcuts to other folders (links) aren't followed, so nothing is counted twice.</li>
+            <li>OneDrive files that live only in the cloud count as 0 bytes on this PC.</li>
+            <li>Stop a scan any time; you keep a clearly labelled partial result.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-chart"/></svg></div>
+          <h3>Compare scans</h3>
+          <p>Every completed scan is saved on your PC (the last 12 per drive or folder). Pick two scans of the same place to see:</p>
+          <ul>
+            <li>the folders that grew or shrank, only the ones that really explain the change;</li>
+            <li>new or larger files of 100 MB or more;</li>
+            <li>the net change, with <b>Ask AI to explain</b>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-details"/></svg></div>
+          <h3>Details for anything you select</h3>
+          <p>The details panel shows a selection's size, file count, dates and cleanup risk with the reason, a breakdown of what's inside (largest folders or file types), and its largest files with a <b>See all</b> link.</p>
+          <p>Sizes match File Explorer (1 GB = 1,073,741,824 bytes).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Clean -->
+    <section class="group" id="clean">
+      <div class="group-head">
+        <p class="eyebrow">Free up space safely</p>
+        <h2>Every item gets a risk level and a reason</h2>
+        <p>SpaceLens knows which Windows folders are caches, leftovers or system files. It labels every file and folder, and it explains why in plain words. Size alone never makes something "safe to delete".</p>
+      </div>
+
+      <div class="risks" id="risk">
+        <div class="risk low"><span class="badge low">Low Risk</span><p>Rebuilt or re-downloaded automatically.</p><small>Temp files older than two days, browser and app caches, crash dumps, installers in Downloads older than two weeks, the Recycle Bin.</small></div>
+        <div class="risk review"><span class="badge review">Review Required</span><p>Could be fine to remove. You decide.</p><small>Large videos, downloaded archives, disk images, build folders like node_modules, big files untouched for a year, everything else.</small></div>
+        <div class="risk high"><span class="badge high">High Risk</span><p>Shown, but never suggested.</p><small>Your profile and personal folders as a whole, app data, databases, mailboxes, virtual machines, password vaults, .git history, other users' files.</small></div>
+        <div class="risk prot"><span class="badge prot">Protected</span><p>SpaceLens won't touch it.</p><small>Windows, Program Files, ProgramData, boot and recovery folders, links, Windows update leftovers, and folders on your never-touch list.</small></div>
+      </div>
+
+      <article class="feature" id="cleanup">
+        <div class="copy">
+          <h3><span class="tag">Cleanup page</span>Storage Goal Solver</h3>
+          <p>Tell SpaceLens how much space you need, for example <b>20 GB</b>. It builds the lowest-risk plan that gets there:</p>
+          <ul>
+            <li>Whole low-risk groups first, largest first.</li>
+            <li>Then, only if needed, the biggest reviewable items, and only as many as the goal needs.</li>
+            <li>High-risk and protected items are never used.</li>
+            <li>If the goal can't be reached safely, it says so and suggests uninstalling unused apps or moving files to another drive.</li>
+          </ul>
+          <div class="howto"><b>Nothing happens until you confirm.</b> You see every item in a confirmation window, and they go to the Recycle Bin, so you can restore them. Emptying the Recycle Bin is a separate step with its own warning.</div>
+        </div>
+        <div class="mock" aria-label="Illustration of a cleanup plan">
+          <div class="goal">I want to free <span class="input">20 GB</span><span class="btn primary">Create plan</span></div>
+          <div class="summary">About 12.6 GB comes from low-risk cleanup. The remaining 7.4 GB needs items you should review one by one.</div>
+          <div class="steps">
+            <div class="step"><span class="n">1</span><span class="t">Temporary files</span><span class="s">6.2 GB</span><span class="badge low">Low Risk</span></div>
+            <div class="step"><span class="n">2</span><span class="t">Browser caches</span><span class="s">4.1 GB</span><span class="badge low">Low Risk</span></div>
+            <div class="step"><span class="n">3</span><span class="t">Recycle Bin</span><span class="s">2.3 GB</span><span class="badge low">Low Risk</span></div>
+            <div class="step"><span class="n">4</span><span class="t">Large videos (2 of 9)</span><span class="s">7.6 GB</span><span class="badge review">Review Required</span></div>
+          </div>
+        </div>
+      </article>
+
+      <div class="cards two">
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-move"/></svg></div>
+          <h3>Move to another drive</h3>
+          <p>Right-click a big folder or file in <b>Folders › Move to another drive…</b> and pick a folder on another drive or USB disk. Windows' own copy window shows the progress.</p>
+          <p>The space is freed here and nothing is lost. SpaceLens checks there's enough room first and refuses to move Windows, programs or app data.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-ban"/></svg></div>
+          <h3>Never-touch folders</h3>
+          <p>Right-click a folder › <b>Never suggest for cleanup</b>, or add folders in <b>Settings › Never-touch folders</b>.</p>
+          <p>Everything inside becomes Protected: it disappears from cleanup groups, plans and the AI's suggestions, and SpaceLens won't recycle or move it.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-copy"/></svg></div>
+          <h3>Duplicates</h3>
+          <p>Finds files of 100 KB or more with exactly the same contents: same size, then a quick fingerprint, then a full SHA-256 check of every byte.</p>
+          <p>The oldest copy is kept by default and the others are pre-selected. System and program files are left out, and hard links aren't mistaken for copies.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-history"/></svg></div>
+          <h3>Cleanup history</h3>
+          <p>The <b>History</b> page lists everything SpaceLens sent to the Recycle Bin, emptied or moved to another drive, with how much you cleaned up this month and overall.</p>
+          <p>Remember: items in the Recycle Bin keep using space until it's emptied.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Know -->
+    <section class="group" id="know">
+      <div class="group-head">
+        <p class="eyebrow">Know your PC</p>
+        <h2>Programs and Windows' own space</h2>
+        <p>Not everything is files you made. Two pages cover what programs and Windows itself take up.</p>
+      </div>
+
+      <article class="feature" id="apps">
+        <div class="copy">
+          <h3><span class="tag">Apps page</span>Which programs are big, and which you never use</h3>
+          <p>The same list as Windows Settings › Apps, sorted by size, with:</p>
+          <ul>
+            <li><b>Size:</b> measured from your scan when it covers the program's folder, otherwise what the installer reported.</li>
+            <li><b>Last used:</b> when you last started it from Start, the taskbar or File Explorer (Windows keeps this record). Programs started another way, like a game launcher, show "Not recorded".</li>
+            <li>A filter by name or publisher, and <b>Which can I remove?</b> to ask the AI.</li>
+          </ul>
+          <div class="howto"><b>Uninstall…</b> asks you first, then runs the program's own uninstaller, exactly like Windows Settings does.</div>
+        </div>
+        <div class="mock" aria-label="Illustration of the Apps page">
+          <div class="bar"><b>Apps</b><span class="sp example">Example</span></div>
+          <div class="rows">
+            <div class="row"><span class="ico" style="background:#7c4dff">G</span><span><span class="name">Old Racing Game</span><span class="sub">Game Studio · 1.4.2</span></span><span class="right"><span class="size">41.7 GB</span><span class="sub stale">2.1 years ago</span></span></div>
+            <div class="row"><span class="ico" style="background:#e5484d">V</span><span><span class="name">Video Editor Pro</span><span class="sub">Creative Tools Inc.</span></span><span class="right"><span class="size">8.4 GB</span><span class="sub stale">7 months ago</span></span></div>
+            <div class="row"><span class="ico" style="background:#12a594">P</span><span><span class="name">Photo Studio</span><span class="sub">Pixel Labs</span></span><span class="right"><span class="size">3.2 GB</span><span class="sub">Today</span></span></div>
+            <div class="row"><span class="ico" style="background:#2F8CFF">M</span><span><span class="name">Music Player</span><span class="sub">Sound Co.</span></span><span class="right"><span class="size">412 MB</span><span class="sub">3 days ago</span></span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature flip" id="system">
+        <div class="copy">
+          <h3><span class="tag">System space page</span>What Windows keeps for itself</h3>
+          <p>Space you can't see in normal folders, with what each item is for and what you'd give up by shrinking it:</p>
+          <ul>
+            <li>Hibernation file, virtual memory (page file)</li>
+            <li>A previous Windows installation and Windows Update downloads</li>
+            <li>The component store (WinSxS) and System Restore points</li>
+          </ul>
+          <div class="howto"><b>SpaceLens never deletes these itself.</b> Each card opens the right Windows tool (Temporary files, virtual memory settings, System Protection) or runs Windows' own command after asking for administrator approval.</div>
+        </div>
+        <div class="mock" aria-label="Illustration of the System space page">
+          <div class="bar"><b>System space on C:</b><span class="sp example">Example</span></div>
+          <div class="rows">
+            <div class="row"><span class="ico" style="background:var(--raised);color:var(--accent-hi)"><svg class="i"><use href="#i-system"/></svg></span><span><span class="name">Virtual memory (page file)</span><span class="sub">Open virtual memory settings</span></span><span class="right"><span class="size">16.3 GB</span></span></div>
+            <div class="row"><span class="ico" style="background:var(--raised);color:var(--accent-hi)"><svg class="i"><use href="#i-bolt"/></svg></span><span><span class="name">Hibernation file</span><span class="sub">Turn off hibernation…</span></span><span class="right"><span class="size">12.7 GB</span></span></div>
+            <div class="row"><span class="ico" style="background:var(--raised);color:var(--accent-hi)"><svg class="i"><use href="#i-apps"/></svg></span><span><span class="name">Component store (WinSxS)</span><span class="sub">Clean up component store…</span></span><span class="right"><span class="size">7.8 GB</span></span></div>
+            <div class="row"><span class="ico" style="background:var(--raised);color:var(--accent-hi)"><svg class="i"><use href="#i-install"/></svg></span><span><span class="name">Windows Update downloads</span><span class="sub">Open Temporary files</span></span><span class="right"><span class="size">1.1 GB</span></span></div>
+            <div class="row"><span class="ico" style="background:var(--raised);color:var(--accent-hi)"><svg class="i"><use href="#i-history"/></svg></span><span><span class="name">System Restore points</span><span class="sub">Open System Protection</span></span><span class="right"><span class="sub">Size needs admin rights</span></span></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- AI -->
+    <section class="group" id="ai">
+      <div class="group-head">
+        <p class="eyebrow">Ask the AI</p>
+        <h2>An assistant that knows your scan</h2>
+        <p>The chat panel answers questions about your storage. It uses <b>Claude Haiku 5.5</b> when you add an Anthropic API key, and simpler offline answers when you don't.</p>
+      </div>
+
+      <article class="feature" id="assistant">
+        <div class="copy">
+          <h3><span class="tag">AI Storage Assistant</span>Ask in plain words</h3>
+          <p>"What takes the most space?", "Is it safe to delete this?", "What grew since last week?", "Which apps can I remove?", "How can I free 20 GB?"</p>
+          <ul>
+            <li>Answers appear word by word as Claude writes them.</li>
+            <li>Every file or folder it mentions is a link that opens it in SpaceLens.</li>
+            <li>For "free X GB" questions you get the same safe plan as the Cleanup page, with a <b>Clean these now…</b> button right under the answer.</li>
+            <li>The conversation is still there after you restart the app (the last 100 messages; <b>Clear</b> removes it).</li>
+            <li>Claude can only look. It can't delete, move or change anything.</li>
+          </ul>
+        </div>
+        <div class="mock" aria-label="Illustration of the assistant chat">
+          <div class="bar"><svg class="i fill" style="color:var(--sky)"><use href="#i-sparkle"/></svg><b>AI Storage Assistant</b><span class="sp">Claude Haiku 5.5</span></div>
+          <div class="chat">
+            <div class="q">How can I free 20 GB?</div>
+            <div class="a">
+              <span class="av"><svg class="i fill"><use href="#i-sparkle"/></svg></span>
+              <div class="body">
+                <p>You can get there without touching anything important. Most of it is low-risk cleanup; the rest is two old videos in <span class="link">C:\Users\Alex\Videos</span> you should check first.</p>
+                <div class="plan">
+                  <div><span>1. Temporary files · 6.2 GB</span><span class="badge low">Low Risk</span></div>
+                  <div><span>2. Browser caches · 4.1 GB</span><span class="badge low">Low Risk</span></div>
+                  <div><span>3. Recycle Bin · 2.3 GB</span><span class="badge low">Low Risk</span></div>
+                  <div><span>4. Large videos · 7.6 GB</span><span class="badge review">Review Required</span></div>
+                </div>
+                <div class="actions"><span class="btn primary">Clean these now…</span><span class="btn">Open this plan in Cleanup</span></div>
+              </div>
+            </div>
+            <div class="ask">Ask about your storage<span class="caret"></span><span class="send"><svg class="i"><use href="#i-send"/></svg></span></div>
+          </div>
+        </div>
+      </article>
+
+      <div class="cards">
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-lock"/></svg></div>
+          <h3>Your files stay private</h3>
+          <p>Before the first question, SpaceLens asks your permission. Claude then sees only names, paths, sizes, dates and risk labels of the items it needs, never what's inside your files.</p>
+          <p>You can turn this off any time in Settings.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-key"/></svg></div>
+          <h3>Your own API key</h3>
+          <p>Paste an Anthropic API key in <b>Settings › AI Assistant</b> and press <b>Test connection</b>. It's encrypted for your Windows account and never shown again.</p>
+          <p>Questions are billed to that Anthropic account. Without a key, everything except Claude still works.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-offline"/></svg></div>
+          <h3>Offline answers</h3>
+          <p>No key, no permission or no internet? The assistant still answers the common questions (free X GB, what's largest, is this safe, what grew, which apps) from your scan, without going online.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Background -->
+    <section class="group" id="background">
+      <div class="group-head">
+        <p class="eyebrow">Works in the background</p>
+        <h2>There when you need it</h2>
+      </div>
+
+      <article class="feature" id="alerts">
+        <div class="copy">
+          <h3><span class="tag">Low-space alerts</span>A heads-up before the drive is full</h3>
+          <p>Turn on <b>Settings › Low-space alerts</b>. Once a day, around noon (or soon after the PC starts if it was off), SpaceLens checks quietly in the background.</p>
+          <ul>
+            <li>It alerts you when a drive has less than 5, 10, 15, 20 or 25% free (your choice).</li>
+            <li>It also alerts you when the system drive grew by 2 to 50 GB since the last check, and names the folder that grew most.</li>
+            <li>If everything is fine, you see nothing at all.</li>
+            <li><b>Check now</b> runs the check straight away.</li>
+          </ul>
+          <div class="howto">The alert is a small card in the corner of the screen. It closes by itself after 45 seconds unless your mouse is over it.</div>
+        </div>
+        <div class="mock" aria-label="Illustration of an alert card">
+          <div class="desk">
+            <div class="toast">
+              <div class="hd"><svg aria-hidden="true"><use href="#logo"/></svg><b>SpaceLens</b> · daily check</div>
+              <div class="ttl">Windows (C:) is almost full</div>
+              <p>Only 11 GB free (8%). Open SpaceLens to see what's using the space.</p>
+              <div class="btns"><span class="btn primary">Open SpaceLens</span><span class="btn">Dismiss</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature flip" id="rightclick">
+        <div class="copy">
+          <h3><span class="tag">File Explorer</span>Right-click › Analyze with SpaceLens</h3>
+          <p>Right-click any folder or drive in File Explorer (or the empty space inside an open folder) and choose <b>Analyze with SpaceLens</b>. The app opens and scans it straight away.</p>
+          <div class="howto">On Windows 11 it's under <b>Show more options</b>, or hold <kbd>Shift</kbd> while you right-click. Turn it on or off in <b>Settings › SpaceLens on this PC</b>. Only your Windows account is changed.</div>
+        </div>
+        <div class="mock" aria-label="Illustration of the File Explorer menu">
+          <div class="ctx">
+            <div><svg class="i"><use href="#i-folder"/></svg>Open</div>
+            <div><svg class="i"><use href="#i-folder"/></svg>Open in new window</div>
+            <div class="hl"><svg aria-hidden="true" style="width:16px;height:16px"><use href="#logo"/></svg>Analyze with SpaceLens</div>
+            <hr>
+            <div><svg class="i"><use href="#i-copy"/></svg>Copy as path</div>
+            <div><svg class="i"><use href="#i-details"/></svg>Properties</div>
+          </div>
+        </div>
+      </article>
+
+      <div class="cards">
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-expand"/></svg></div>
+          <h3>Full screen from the start</h3>
+          <p>SpaceLens opens full screen, covering the taskbar too. The restore button in the title bar gives you a normal window you can resize.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-gear"/></svg></div>
+          <h3>Settings</h3>
+          <ul>
+            <li>API key, connection test and privacy permission</li>
+            <li>Never-touch folders</li>
+            <li>Low-space alerts and their thresholds</li>
+            <li>Install, shortcuts and the right-click entry</li>
+            <li>Where your data is kept, and deleting scan history</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="ic"><svg class="i"><use href="#i-install"/></svg></div>
+          <h3>Installs like a normal app</h3>
+          <p>Desktop and Start menu shortcuts, an entry in Windows Settings › Apps, and a clean uninstall. No administrator rights, and other people's accounts on the PC aren't touched.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Promises -->
+    <section class="group" id="promises">
+      <div class="group-head">
+        <p class="eyebrow">Safety</p>
+        <h2>What SpaceLens will never do</h2>
+      </div>
+      <div class="promises">
+        <div class="promise"><svg class="i"><use href="#i-check"/></svg><span><b>Never removes anything on its own.</b> Every removal shows you the full list and waits for your OK.</span></div>
+        <div class="promise"><svg class="i"><use href="#i-check"/></svg><span><b>Never deletes permanently by surprise.</b> Items go to the Recycle Bin; emptying it is a separate, clearly marked step.</span></div>
+        <div class="promise"><svg class="i"><use href="#i-check"/></svg><span><b>Never touches Windows or installed programs.</b> They're Protected; programs are removed with their own uninstaller.</span></div>
+        <div class="promise"><svg class="i"><use href="#i-check"/></svg><span><b>Re-checks at the last moment.</b> Even an item you picked is skipped if it's protected, high risk, or a folder hiding a database or project history.</span></div>
+        <div class="promise"><svg class="i"><use href="#i-check"/></svg><span><b>Never sends your files anywhere.</b> Only names, sizes and dates, only to Claude, and only with your permission.</span></div>
+        <div class="promise"><svg class="i"><use href="#i-check"/></svg><span><b>Never lets the AI act.</b> Claude can read your scan through read-only tools. Acting is always your click.</span></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>SpaceLens</span>
+    <a href="how-it-works.html">How it works (technical details) →</a>
+    <span class="sp">Windows 10 and 11 · .NET 9 · WPF</span>
+  </div>
+</footer>
+
+</body>
+</html>

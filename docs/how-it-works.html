@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How SpaceLens Works</title>
+<meta name="description" content="Technical details of SpaceLens: architecture, scanner, cleanup engine, history, duplicates, the Claude integration and Windows integration.">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0E1621;
+    --surface: #121C28;
+    --raised: #16212F;
+    --hover: #192636;
+    --border: #1E2A3A;
+    --border-strong: #2A3A50;
+    --text: #E8EEF6;
+    --text-2: #A4B4C8;
+    --text-3: #6C7E94;
+    --accent: #2F8CFF;
+    --accent-hi: #4C9DFF;
+    --sky: #38B2FF;
+    --deep: #1660E0;
+    --low-bg: #0E3527; --low: #4FD69C;
+    --review-bg: #3A2C0E; --review: #F5BF4F;
+    --high-bg: #3D1B22; --high: #FF8F94;
+    --prot-bg: #1B2738; --prot: #93A7C3;
+    --violet: #9B7BF7;
+    --radius: 14px;
+    --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: var(--accent-hi); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { font-family: var(--mono); font-size: .86em; background: var(--raised); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; color: #CFE0F5; white-space: nowrap; font-variant-ligatures: none; }
+  code.w { white-space: normal; overflow-wrap: anywhere; }
+  pre { font-variant-ligatures: none; margin: 16px 0; padding: 16px 18px; background: #0A111B; border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; font: 13px/1.6 var(--mono); color: #CFE0F5; }
+  pre code { background: none; border: 0; padding: 0; font-size: inherit; white-space: pre; }
+  pre .c { color: var(--text-3); }
+  pre .k { color: #7FB8FF; }
+  pre .s { color: #8FD9B6; }
+  pre .n { color: #F5BF4F; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+  @media (min-width: 640px) { .wrap { padding: 0 28px; } }
+  svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .top { position: sticky; top: 0; z-index: 10; background: rgba(14, 22, 33, .86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+  .top .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; font-size: 17px; }
+  .brand:hover { text-decoration: none; }
+  .brand svg { width: 30px; height: 30px; }
+  .top nav { margin-left: auto; display: flex; gap: 4px; }
+  .top nav a { color: var(--text-2); padding: 6px 12px; border-radius: 8px; font-size: 14px; white-space: nowrap; }
+  .top nav a:hover { background: var(--hover); color: var(--text); text-decoration: none; }
+  .top nav a[aria-current] { color: var(--text); background: var(--raised); }
+
+  .hero { padding: 64px 0 32px; position: relative; }
+  .hero::before { content: ""; position: absolute; top: -60px; left: 50%; width: 100vw; height: 480px; transform: translateX(-50%); z-index: -1;
+    background: radial-gradient(700px 280px at 28% 35%, rgba(47, 140, 255, .15), transparent 70%), radial-gradient(520px 260px at 82% 10%, rgba(155, 123, 247, .08), transparent 70%); }
+  .eyebrow { color: var(--sky); font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 12px; }
+  h1 { font-family: var(--display); font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; letter-spacing: -.025em; margin: 0 0 18px; font-weight: 650; max-width: 20ch; }
+  .lead { font-size: clamp(1.05rem, 2vw, 1.18rem); color: var(--text-2); max-width: 68ch; margin: 0; }
+  .lead b { color: var(--text); }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px; margin-top: 32px; }
+  .fact { padding: 16px 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+  .fact b { display: block; font-family: var(--display); font-size: 26px; line-height: 1.15; font-weight: 650; color: var(--text); }
+  .fact span { font-size: 13.5px; color: var(--text-2); }
+
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; align-items: start; padding-bottom: 40px; }
+  .toc { position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow-y: auto; padding: 4px 0 20px; }
+  .toc p { margin: 0 0 8px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+  .toc ol { list-style: none; margin: 0; padding: 0; counter-reset: t; }
+  .toc li { counter-increment: t; }
+  .toc a { display: flex; gap: 10px; padding: 5px 10px; border-radius: 8px; color: var(--text-2); font-size: 14px; line-height: 1.4; }
+  .toc a::before { content: counter(t, decimal-leading-zero); color: var(--text-3); font-variant-numeric: tabular-nums; font-size: 12px; padding-top: 1px; }
+  .toc a:hover { background: var(--hover); color: var(--text); text-decoration: none; }
+  @media (max-width: 1000px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .toc { position: static; max-height: none; padding: 0 0 8px; }
+    .toc ol { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 2px 8px; }
+  }
+
+  article section { padding: 44px 0 8px; border-top: 1px solid var(--border); }
+  article section:first-child { border-top: 0; padding-top: 8px; }
+  h2 { font-family: var(--display); font-size: clamp(1.45rem, 3vw, 1.9rem); line-height: 1.2; letter-spacing: -.02em; margin: 0 0 14px; font-weight: 650; }
+  h2 small { display: block; font-family: var(--sans); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--sky); font-weight: 600; margin-bottom: 6px; }
+  h3 { font-size: 1.08rem; margin: 28px 0 8px; font-weight: 600; letter-spacing: -.005em; }
+  article p { color: var(--text-2); margin: 0 0 14px; max-width: 78ch; }
+  article p b, article li b { color: var(--text); font-weight: 600; }
+  article ul, article ol.plain { color: var(--text-2); margin: 0 0 14px; padding-left: 22px; max-width: 78ch; }
+  article li { margin: 5px 0; }
+  article li::marker { color: var(--accent); }
+
+  .table-wrap { overflow-x: auto; margin: 14px 0 18px; border: 1px solid var(--border); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  th { background: var(--surface); color: var(--text-3); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  td { color: var(--text-2); }
+  td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+
+  .callout { margin: 16px 0; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(47, 140, 255, .3); background: rgba(47, 140, 255, .07); color: var(--text-2); max-width: 78ch; }
+  .callout b { color: var(--text); }
+  .callout.warn { border-color: rgba(245, 191, 79, .3); background: rgba(245, 191, 79, .07); }
+
+  .badge { display: inline-flex; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .badge.low { background: var(--low-bg); color: var(--low); }
+  .badge.review { background: var(--review-bg); color: var(--review); }
+  .badge.high { background: var(--high-bg); color: var(--high); }
+  .badge.prot { background: var(--prot-bg); color: var(--prot); }
+
+  /* Architecture diagram */
+  .arch { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 14px; margin: 20px 0 8px; }
+  .process { border: 1px dashed var(--border-strong); border-radius: 16px; padding: 14px; position: relative; }
+  .process > .lbl { position: absolute; top: -11px; left: 16px; padding: 0 8px; background: var(--bg); font-size: 12px; color: var(--text-3); font-family: var(--mono); }
+  .layer { border-radius: 12px; padding: 14px; background: var(--surface); border: 1px solid var(--border); }
+  .layer h4 { margin: 0 0 10px; font-size: 14px; font-weight: 600; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+  .layer h4 span { font-weight: 400; font-size: 12.5px; color: var(--text-3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { padding: 4px 10px; border-radius: 8px; font-size: 12.5px; background: var(--raised); border: 1px solid var(--border-strong); color: var(--text); }
+  .layer.app { border-top: 3px solid var(--sky); }
+  .layer.core { border-top: 3px solid var(--accent); }
+  .layer.os { border-top: 3px solid var(--violet); }
+  .arrow { display: flex; align-items: center; justify-content: center; gap: 8px; height: 34px; color: var(--text-3); font-size: 12px; }
+  .arrow::before { content: ""; width: 2px; height: 22px; background: linear-gradient(var(--border-strong), var(--accent)); }
+  .net { border-radius: 12px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--low); align-self: end; }
+  .net h4 { margin: 0 0 6px; font-size: 14px; }
+  .net p { margin: 0; font-size: 13px; color: var(--text-2); }
+  .net code { font-size: 12px; }
+  @media (max-width: 760px) { .arch { grid-template-columns: minmax(0, 1fr); } }
+
+  /* Pipelines */
+  .pipe { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; margin: 18px 0; counter-reset: p; }
+  .pipe div { counter-increment: p; position: relative; padding: 14px 14px 14px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); font-size: 13.5px; color: var(--text-2); }
+  .pipe div::before { content: counter(p); display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .pipe b { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  .seq { list-style: none; margin: 18px 0; padding: 0; counter-reset: q; max-width: 80ch; }
+  .seq li { counter-increment: q; position: relative; padding: 0 0 16px 46px; color: var(--text-2); }
+  .seq li::before { content: counter(q); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--raised); border: 1px solid var(--border-strong); color: var(--text); font-size: 13px; font-weight: 600; }
+  .seq li::after { content: ""; position: absolute; left: 13.5px; top: 32px; bottom: 4px; width: 1px; background: var(--border-strong); }
+  .seq li:last-child::after { display: none; }
+  .seq b { color: var(--text); }
+
+  .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 16px 0; }
+  .two .box { padding: 16px 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+  .two .box h4 { margin: 0 0 8px; font-size: 14.5px; }
+  .two .box p, .two .box ul { font-size: 14px; margin-bottom: 0; }
+  @media (max-width: 760px) { .two { grid-template-columns: minmax(0, 1fr); } }
+
+  footer { margin-top: 40px; border-top: 1px solid var(--border); padding: 28px 0 48px; color: var(--text-3); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38B2FF"/><stop offset="1" stop-color="#1660E0"/></linearGradient>
+  </defs>
+  <symbol id="logo" viewBox="0 0 38 38">
+    <rect width="38" height="38" rx="11" fill="url(#logoGrad)"/>
+    <circle cx="19" cy="19" r="8.4" fill="none" stroke="#fff" stroke-width="3.2"/>
+    <circle cx="24.5" cy="13.5" r="3" fill="#fff"/>
+  </symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="features.html"><svg aria-hidden="true"><use href="#logo"/></svg>SpaceLens</a>
+    <nav aria-label="Pages">
+      <a href="features.html">Features</a>
+      <a href="how-it-works.html" aria-current="page">How it works</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="eyebrow">Technical details</p>
+    <h1>How SpaceLens works inside</h1>
+    <p class="lead">SpaceLens has <b>no server</b>. Its "backend" is <code>SpaceLens.Core</code>, a .NET 9 class library that runs inside the desktop app's own process and talks straight to Windows: the file system, the shell, the registry, Task Scheduler and DPAPI. The only network traffic is to the Anthropic Messages API, and only after the user adds an API key and agrees to share scan details.</p>
+    <div class="facts">
+      <div class="fact"><b>0</b><span>servers or background services</span></div>
+      <div class="fact"><b>~1.5 s</b><span>to scan ~390,000 files (warm cache)</span></div>
+      <div class="fact"><b>7</b><span>read-only tools Claude can call</span></div>
+      <div class="fact"><b>1</b><span>code path that removes or moves files</span></div>
+      <div class="fact"><b>148</b><span>unit tests, warnings as errors</span></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <ol>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#stack">Tech stack</a></li>
+        <li><a href="#startup">Startup and modes</a></li>
+        <li><a href="#scanner">The scanner</a></li>
+        <li><a href="#session">The scan session</a></li>
+        <li><a href="#risk">Risk and planning</a></li>
+        <li><a href="#executor">Removing and moving</a></li>
+        <li><a href="#history">History and comparison</a></li>
+        <li><a href="#duplicates">Duplicates</a></li>
+        <li><a href="#ai">The AI assistant</a></li>
+        <li><a href="#apps">Apps and system space</a></li>
+        <li><a href="#windows">Windows integration</a></li>
+        <li><a href="#data">Data on disk</a></li>
+        <li><a href="#build">Build and tests</a></li>
+      </ol>
+    </nav>
+
+    <article>
+      <!-- 1 -->
+      <section id="architecture">
+        <h2><small>01</small>Architecture</h2>
+        <p>Two production projects with a one-way dependency: the WPF app depends on Core, and Core never references WPF. A third project holds the tests.</p>
+
+        <div class="arch" role="img" aria-label="SpaceLens architecture: the WPF app calls SpaceLens.Core, which calls Windows and local storage; Core alone talks to the Anthropic API.">
+          <div class="process">
+            <span class="lbl">SpaceLens.exe (one process)</span>
+            <div class="layer app">
+              <h4>SpaceLens <span>WPF app · MVVM</span></h4>
+              <div class="chips"><span>Views (XAML)</span><span>View models</span><span>StorageMap · RingGauge · ChatText</span><span>Dialogs · folder picker · alert card</span><span>Installer · shell adapter</span></div>
+            </div>
+            <div class="arrow">calls interfaces resolved by dependency injection</div>
+            <div class="layer core">
+              <h4>SpaceLens.Core <span>class library · no UI</span></h4>
+              <div class="chips"><span>Scanning</span><span>Scan session</span><span>Cleanup risk · analyzer · planner</span><span>Executor · Recycle Bin · mover</span><span>History (SQLite)</span><span>Duplicates</span><span>AI client · tools · prompts</span><span>Installed apps</span><span>System space</span><span>Alerts</span><span>Shell integration</span><span>Settings · DPAPI key</span></div>
+            </div>
+            <div class="arrow">P/Invoke · COM · registry · files</div>
+            <div class="layer os">
+              <h4>Windows and local storage</h4>
+              <div class="chips"><span>File system</span><span>Shell (SHFileOperation, Recycle Bin)</span><span>Registry</span><span>Task Scheduler</span><span>DPAPI</span><span>scans.db</span><span>JSON files</span></div>
+            </div>
+          </div>
+          <div class="net">
+            <h4>Internet (optional)</h4>
+            <p><b>api.anthropic.com</b><br><code>POST /v1/messages</code> over HTTPS, only with a saved key and the user's consent. Without them the assistant answers offline.</p>
+          </div>
+        </div>
+
+        <h3>Rules the code follows</h3>
+        <ul>
+          <li><b>Core never shows UI.</b> When it needs the user, for example to confirm a removal, it calls <code>IConfirmationService</code>. The app implements it with a dialog, and the tests implement it with a script.</li>
+          <li><b>Everything is composed by dependency injection.</b> <code>AddSpaceLensCore()</code> registers Core and <code>AddSpaceLensApp()</code> adds the WPF layer. Services are singletons behind interfaces, and the container validates the whole graph at start-up (<code>ValidateOnBuild</code>).</li>
+          <li><b>View models hold no business rules.</b> They call Core services and turn results into display state. Pages talk to each other through <code>IMessenger</code> messages.</li>
+          <li><b>Errors are typed at the boundary.</b> <code>AiServiceException</code> carries a kind (authentication, billing, rate limit and so on), and history failures surface as <code>HistoryStoreException</code>. Every user-facing message is written to be acted on.</li>
+        </ul>
+      </section>
+
+      <!-- 2 -->
+      <section id="stack">
+        <h2><small>02</small>Tech stack</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Area</th><th>What it uses</th></tr></thead>
+            <tbody>
+              <tr><td>Language and runtime</td><td>C# (latest), .NET 9 (<code>net9.0-windows</code>), nullable reference types on</td></tr>
+              <tr><td>UI</td><td>WPF and XAML, CommunityToolkit.Mvvm 8.4 (<code>[ObservableProperty]</code>, <code>[RelayCommand]</code>, <code>IMessenger</code>)</td></tr>
+              <tr><td>Composition</td><td>Microsoft.Extensions.DependencyInjection, Logging and Http 9.0</td></tr>
+              <tr><td>Storage</td><td>Microsoft.Data.Sqlite 9.0 with the bundled e_sqlite3; System.Text.Json for settings, chat and the cleanup log</td></tr>
+              <tr><td>Secrets</td><td>System.Security.Cryptography.ProtectedData (Windows DPAPI)</td></tr>
+              <tr><td>Windows APIs</td><td>P/Invoke: <code>FindFirstFileExW</code>, <code>SHFileOperationW</code>, <code>SHQueryRecycleBinW</code>, <code>SHEmptyRecycleBinW</code>, <code>GetFileInformationByHandle</code>, <code>ExtractIconExW</code>. COM: <code>WScript.Shell</code>. Plus the registry and <code>schtasks.exe</code></td></tr>
+              <tr><td>AI</td><td>The Anthropic Messages API over plain <code>HttpClient</code> (no SDK), model <code>claude-haiku-5-5</code>, server-sent events for streaming</td></tr>
+              <tr><td>Tests</td><td>xUnit 2.9 (148 tests) and a PowerShell UI Automation smoke test</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 3 -->
+      <section id="startup">
+        <h2><small>03</small>Startup and process modes</h2>
+        <p><code>App.OnStartup</code> builds the service provider (with <code>ValidateOnBuild</code> and <code>ValidateScopes</code>), hooks the global exception handlers, then looks at the first command-line argument. One exe serves four roles:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Argument</th><th>What runs</th><th>Window</th></tr></thead>
+            <tbody>
+              <tr><td>(none)</td><td>Main window and <code class="w">MainViewModel.InitializeAsync()</code>, then the <code>StartupOptions</code> switches: <code>--scan</code>, <code>--select</code>, <code>--page</code>, <code>--ask</code>, <code>--capture</code>, <code>--welcome</code></td><td>Full screen</td></tr>
+              <tr><td><code>--check</code></td><td>The daily check from Task Scheduler. It runs <code>IDriveCheck</code> and exits, or shows the alert card first when there is something to report</td><td>Only the alert card</td></tr>
+              <tr><td><code>--install</code></td><td><code>Installer.Install()</code>, then starts the installed copy with <code>--welcome</code></td><td>Dialogs only</td></tr>
+              <tr><td><code>--uninstall</code></td><td><code>Installer.Uninstall()</code>, run by Windows Settings › Apps</td><td>Dialogs only</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Unexpected exceptions are logged to <code class="w">%LOCALAPPDATA%\SpaceLens\logs\spacelens.log</code> and shown with that path. The app stays open after UI errors. The log never contains the API key.</p>
+      </section>
+
+      <!-- 4 -->
+      <section id="scanner">
+        <h2><small>04</small>The scanner</h2>
+        <p>A scan reads the directory tree into a compact in-memory model. Nothing is written to disk while scanning. An earlier version wrote every file to SQLite and took minutes; the in-memory tree takes about 1.5 seconds for a warm system drive with around 390,000 files.</p>
+
+        <div class="pipe">
+          <div><b>Normalize the path</b>Trims quotes and turns <code>C:</code> into <code>C:\</code>. It refuses a link as the root.</div>
+          <div><b>Parallel walk</b>2 to 8 workers (one per CPU core) take folders from a shared LIFO stack.</div>
+          <div><b>List each folder once</b><code>FileSystemEnumerator</code> with a 32 KB buffer. Errors mark the folder unreadable.</div>
+          <div><b>Skip links</b>Junctions, symlinks and mount points are recorded, never followed.</div>
+          <div><b>Aggregate</b>An iterative post-order pass computes every folder's size and counts.</div>
+        </div>
+
+        <h3>Parallel directory walk</h3>
+        <p><code>ParallelDirectoryWalker</code> runs <code class="w">Math.Clamp(Environment.ProcessorCount, 2, 8)</code> long-running tasks over one <code>BlockingCollection</code> backed by a <code>ConcurrentStack</code>. LIFO order keeps the walk depth-first, so the queue stays small even on very wide drives. A <code>_pending</code> counter tracks folders that are queued or being read, and the walk is finished when it reaches zero:</p>
+<pre><code><span class="c">// Count the folder before queueing it, so the walk can't look finished while it waits.</span>
+Interlocked.Increment(<span class="k">ref</span> _pending);
+_queue.Add((child, childPath));
+<span class="c">…</span>
+<span class="k">finally</span>
+{
+    <span class="k">if</span> (Interlocked.Decrement(<span class="k">ref</span> _pending) == <span class="n">0</span>) _queue.CompleteAdding();
+}</code></pre>
+        <p>File and byte counters are published in batches of 4,096 files to keep contention between workers low. The calling thread reports a progress snapshot (files, folders, bytes, unreadable folders, current path) every 120 ms. Access problems (<code>UnauthorizedAccessException</code>, <code>IOException</code>, <code>SecurityException</code>) mark one folder unreadable. Any other exception stops every worker and is rethrown. Cancelling returns a result marked <b>partial</b>.</p>
+
+        <h3>Links, OneDrive and sizes</h3>
+        <ul>
+          <li>A folder with the reparse-point attribute is checked with <code>FindFirstFileExW</code>. If bit 29 of its reparse tag, the <b>name-surrogate</b> bit (<code>0x20000000</code>), is set, it's a junction, symbolic link or mount point. It is recorded but not followed, so there are no loops and nothing is counted twice. When the tag can't be read, the folder is treated as a link to be safe.</li>
+          <li>OneDrive placeholder folders are reparse points without that bit, so they are scanned normally. A cloud-only file (<code>Offline</code>, <code>RecallOnOpen</code> or <code>RecallOnDataAccess</code> attribute) keeps its <code>Length</code> but reports <code>Size = 0</code>, because it uses almost no space on this PC.</li>
+          <li>Sizes are <b>logical</b> file sizes in binary units, like File Explorer. The drive ring uses Windows' <b>physical</b> numbers. For a whole-drive scan the difference (system files, unreadable folders, compression, hard links) is shown as "used but not scanned".</li>
+        </ul>
+
+        <h3>The in-memory model</h3>
+        <p><code>StorageNode</code> is the base class, with a name, parent, last-write time and size. <code>FolderNode</code> holds separate lists of child folders and files, plus cached recursive totals; its full path is built lazily from the parent chain. <code>FileNode</code> keeps the length and attributes. After the walk, <code>Aggregate()</code> fills the totals with an explicit stack, so very deep trees can't overflow the call stack. <code>Remove()</code> detaches a child and subtracts its totals from every ancestor, in time proportional to the folder depth. Removing something never needs a re-scan.</p>
+      </section>
+
+      <!-- 5 -->
+      <section id="session">
+        <h2><small>05</small>The scan session</h2>
+        <p><code>IScanSession</code> owns the current <code>ScanResult</code> and what is derived from it: the cleanup analysis and the growth since the previous scan. Every page and the AI tools read from it.</p>
+        <ul>
+          <li><b>One gate.</b> A <code>SemaphoreSlim(1, 1)</code> is shared by readers and removals. <code>ReadAsync(func)</code> runs the query on the thread pool while holding the gate, so a recycle can never change the tree under a running search, analysis or AI tool call.</li>
+          <li><b>Loading a scan</b> publishes it, runs the cleanup analysis, and for complete scans builds a history record and compares it with the previous scan of the same location. A locked or corrupt database becomes a warning; it never breaks the scan.</li>
+          <li><b>Removing items</b> detaches them deepest first, so a folder and something inside it can both be listed. It then raises <code>ContentsChanged</code> and refreshes the cleanup analysis.</li>
+        </ul>
+      </section>
+
+      <!-- 6 -->
+      <section id="risk">
+        <h2><small>06</small>Cleanup risk and planning</h2>
+        <p>Three pieces share the Windows knowledge: <code>KnownLocations</code> resolves the current user's folders (Temp, AppData, Downloads, the personal folders, Program Files, Windows). <code>CleanupCatalog</code> knows what lives where. <code>CleanupRiskAnalyzer</code> turns that into a risk level and a reason for any single item.</p>
+
+        <h3>What the catalog knows</h3>
+        <ul>
+          <li><b>Browser roots:</b> Chrome, Edge, Brave, Firefox, Vivaldi, Chromium and Opera. Inside them, cache folder names such as <code>Cache</code>, <code>Code Cache</code>, <code>GPUCache</code>, <code>ShaderCache</code> and <code>CacheStorage</code>.</li>
+          <li><b>Tool caches:</b> npm, pip, Yarn, NuGet, Gradle, go-build, <code>D3DSCache</code>, NVIDIA and AMD shader caches, and <code>INetCache</code>.</li>
+          <li><b>Crash reports:</b> <code>CrashDumps</code> and the Windows Error Reporting archive and queue.</li>
+          <li><b>Windows leftovers:</b> <code>Windows.old</code>, <code>$Windows.~BT</code>, <code>$Windows.~WS</code> and <code class="w">SoftwareDistribution\Download</code>.</li>
+          <li><b>Rebuildable folders:</b> <code>node_modules</code>; <code>bin</code>/<code>obj</code> only next to a <code>.csproj</code>, <code>.fsproj</code> or <code>.vbproj</code>; <code>target</code> only next to <code>Cargo.toml</code>; <code>venv</code> only with a <code>pyvenv.cfg</code>.</li>
+        </ul>
+
+        <h3>Rules, most protective first</h3>
+        <p>The analyzer runs four passes, and the first rule that matches wins. Because the order runs from most to least protective, a cache folder inside Windows stays Protected, and nothing is ever called safe just because it's large.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pass</th><th>Result</th><th>Matches</th></tr></thead>
+            <tbody>
+              <tr><td>1. Protected</td><td><span class="badge prot">Protected</span></td><td>Links; the never-touch list; the drive root; SpaceLens' own data; Windows update leftovers; Windows, Program Files and ProgramData (also on other drives); System Volume Information, Recovery, Boot, EFI and similar; <code>hiberfil.sys</code>, <code>pagefile.sys</code>, <code>swapfile.sys</code>. Exceptions: <code>Windows\Temp</code> follows the temp-file rules and <code>$Recycle.Bin</code> is <span class="badge low">Low Risk</span>.</td></tr>
+              <tr><td>2. Disposable</td><td><span class="badge low">Low Risk</span></td><td>Temp entries older than 2 days (newer ones are Review), browser caches, app and package caches, crash dumps, setup files in Downloads older than 14 days (newer ones are Review). The Temp folder itself is High.</td></tr>
+              <tr><td>3. Valuable</td><td><span class="badge high">High Risk</span></td><td>The Users folder, your profile, other accounts, AppData and app data inside it, hidden tool folders in the profile (<code>.vscode</code>, <code>.cargo</code>…), the personal folders themselves, <code>.git</code>, databases and virtual disks, <code>.dll</code>, <code>.sys</code> and <code>.exe</code> files</td></tr>
+              <tr><td>4. Reviewable</td><td><span class="badge review">Review Required</span></td><td>Rebuildable folders, archives in Downloads, videos of 500 MB or more, personal files, and everything else</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Cleanup groups</h3>
+        <p><code>CleanupAnalyzer</code> walks the scan once with an explicit stack. When a folder matches a rule, it is taken whole and not searched further, so nothing is counted twice. Links are never descended. The matches become groups, sorted by risk and then size:</p>
+        <p><span class="badge low">Low Risk</span> Windows update leftovers (cleaned through Windows' Storage settings), temporary files, browser caches, app and developer caches, crash dumps, old installers, the Recycle Bin (read with <code>SHQueryRecycleBinW</code> for drive-root scans).<br>
+        <span class="badge review">Review Required</span> downloaded archives, disk images, large videos, build outputs and dependencies, files of 1 GB or more unchanged for a year.</p>
+
+        <h3>The Storage Goal Solver</h3>
+        <p><code>CleanupPlanner</code> turns a goal (parsed from text like "30 GB", "free 1.5tb" or "I need 500 MB" by <code>StorageGoalParser</code>) into the lowest-risk plan that reaches it:</p>
+<pre><code>remaining = goal
+<span class="k">for each</span> low-risk group, largest first:        <span class="c"># whole groups</span>
+    <span class="k">if</span> remaining &lt;= <span class="n">0</span>: <span class="k">stop</span>
+    take every item;  remaining -= group size
+<span class="k">for each</span> review group, largest first:          <span class="c"># only what the goal still needs</span>
+    <span class="k">if</span> remaining &lt;= <span class="n">0</span>: <span class="k">stop</span>
+    take its largest items until they cover remaining
+<span class="c"># High Risk and Protected groups are never considered.</span></code></pre>
+        <p>The summary sentence says whether low-risk cleanup alone covers the goal, how much needs review, or how far short everything removable falls. In that last case it suggests uninstalling apps or moving files to another drive.</p>
+      </section>
+
+      <!-- 7 -->
+      <section id="executor">
+        <h2><small>07</small>Removing and moving</h2>
+        <p><code>CleanupExecutor</code> is the <b>only</b> code path that changes files. The Cleanup page, Duplicates, the explorer's context menu and the chat's "Clean these now…" button all go through it. Claude never calls it.</p>
+        <div class="two">
+          <div class="box">
+            <h4>Move to the Recycle Bin</h4>
+            <ol class="plain">
+              <li>Re-assess every item now, without trusting the caller's labels. Only <span class="badge low">Low</span> and <span class="badge review">Review</span> items stay.</li>
+              <li>Drop folders that hide a repository or database somewhere inside.</li>
+              <li>Drop items nested inside other selected items.</li>
+              <li>Confirm with the full list, saying how many items were left out and why.</li>
+              <li><code>SHFileOperationW(FO_DELETE)</code> with <code>FOF_ALLOWUNDO</code> (the Recycle Bin), <code>FOF_NOCONFIRMATION</code>, <code>FOF_SILENT</code>, <code>FOF_NOERRORUI</code> and <code>FOF_WANTNUKEWARNING</code>, which warns before anything too big for the bin would be deleted permanently.</li>
+              <li>Detach what was recycled from the tree and write a log entry.</li>
+            </ol>
+          </div>
+          <div class="box">
+            <h4>Move to another drive</h4>
+            <ol class="plain">
+              <li>The same risk filter, except that folders containing repositories or databases may move, because moving loses nothing.</li>
+              <li>The destination must be on another drive; moving within a drive frees nothing.</li>
+              <li>Check the destination's free space against the total size.</li>
+              <li>Confirm.</li>
+              <li><code>SHFileOperationW(FO_MOVE)</code> with <code class="w">FOF_ALLOWUNDO | FOF_NOCONFIRMMKDIR</code>, on a dedicated STA thread so Explorer's progress and conflict windows work.</li>
+              <li>Detach what moved and write a log entry.</li>
+            </ol>
+          </div>
+        </div>
+        <p><b>Emptying the Recycle Bin</b> is a separate, destructive-styled confirmation, followed by <code>SHEmptyRecycleBinW</code> for that drive. Every action is appended to <code>cleanup-log.json</code> (newest first, the last 500 entries), which feeds the History page.</p>
+      </section>
+
+      <!-- 8 -->
+      <section id="history">
+        <h2><small>08</small>History and comparison</h2>
+        <p>Completed scans are saved to <code>scans.db</code> (SQLite in WAL mode). Saving every file would be slow and huge, so a snapshot keeps only what can explain growth: the totals, every folder of 1 MB or more, and every file of 100 MB or more. The last 12 snapshots per location are kept.</p>
+<pre><code><span class="k">CREATE TABLE</span> Snapshots (
+    Id <span class="k">INTEGER PRIMARY KEY</span>, RootPath <span class="k">TEXT NOT NULL COLLATE NOCASE</span>, CreatedUtc <span class="k">TEXT NOT NULL</span>,
+    TotalBytes <span class="k">INTEGER</span>, FileCount <span class="k">INTEGER</span>, FolderCount <span class="k">INTEGER</span>, UnreadableFolderCount <span class="k">INTEGER</span>);
+<span class="k">CREATE TABLE</span> SnapshotFolders (
+    SnapshotId <span class="k">INTEGER REFERENCES</span> Snapshots(Id) <span class="k">ON DELETE CASCADE</span>,
+    Path <span class="k">TEXT COLLATE NOCASE</span>, Bytes <span class="k">INTEGER</span>, FileCount <span class="k">INTEGER</span>,
+    <span class="k">PRIMARY KEY</span> (SnapshotId, Path)) <span class="k">WITHOUT ROWID</span>;
+<span class="k">CREATE TABLE</span> SnapshotFiles (
+    SnapshotId <span class="k">INTEGER REFERENCES</span> Snapshots(Id) <span class="k">ON DELETE CASCADE</span>,
+    Path <span class="k">TEXT COLLATE NOCASE</span>, Bytes <span class="k">INTEGER</span>, LastWriteUtc <span class="k">TEXT</span>,
+    <span class="k">PRIMARY KEY</span> (SnapshotId, Path)) <span class="k">WITHOUT ROWID</span>;
+<span class="k">CREATE INDEX</span> IX_Snapshots_Root <span class="k">ON</span> Snapshots(RootPath, Id);</code></pre>
+        <p>The schema version lives in <code>PRAGMA user_version</code> (currently 2). Version 1 tables, which stored every file, are dropped on upgrade. Writes run in one transaction with prepared statements.</p>
+
+        <h3>Comparing two scans</h3>
+        <p>Folder changes come from one query: a <code>LEFT JOIN</code> of the newer snapshot onto the older one, plus a <code>UNION ALL</code> for folders that disappeared. Large-file changes work the same way. Then <b>MostSpecific</b> keeps only folders that explain their own change:</p>
+        <ul>
+          <li>Take the 400 largest changes, and process them deepest first.</li>
+          <li>A folder is listed only if the folders already listed inside it explain less than <b>80%</b> of its change.</li>
+          <li>Show the top 15.</li>
+        </ul>
+        <div class="callout">If <code>C:\Users</code> grew by 10 GB because <code>…\Videos</code> grew by 6 GB and <code>…\Downloads</code> by 4 GB, only those two folders are listed, not <code>C:\Users</code> or the folders in between.</div>
+      </section>
+
+      <!-- 9 -->
+      <section id="duplicates">
+        <h2><small>09</small>Duplicates</h2>
+        <div class="pipe">
+          <div><b>Same size</b>Files of 100 KB or more that aren't cloud-only, grouped by exact length.</div>
+          <div><b>Fingerprint</b>SHA-256 of the first and last 64 KB. Files up to 128 KB are read whole here, so this is already exact.</div>
+          <div><b>Full hash</b>SHA-256 of every byte (1 MB buffer, sequential-scan hint), only for files whose fingerprints match.</div>
+        </div>
+        <ul>
+          <li>The fingerprint step opens each file once and reads its <b>file ID</b> (volume serial plus file index) with <code>GetFileInformationByHandle</code>. A second hard link to the same file is skipped instead of being reported as a copy. A file whose length changed since the scan is skipped too.</li>
+          <li>Files are opened with <code class="w">FileShare.ReadWrite | FileShare.Delete</code>, so the search never blocks other programs. Unreadable files are counted as skipped.</li>
+          <li>Groups are sorted by redundant bytes. The page keeps the oldest copy (on a date tie, the shortest path, usually the original) and pre-selects the rest. Removal goes through the executor described above.</li>
+        </ul>
+      </section>
+
+      <!-- 10 -->
+      <section id="ai">
+        <h2><small>10</small>The AI assistant</h2>
+        <p>The assistant panel picks between two engines. <code>ClaudeHaikuService</code> is used when an API key is saved <b>and</b> the user agreed to share scan details. Otherwise <code>LocalStorageAssistant</code> answers offline: it recognises a few intents (free X GB, what's largest, is this safe, what grew, which apps) and computes the answer on the PC. If Claude can't be reached after retries (network, timeout, overload, server error or rate limit), the user sees the error and an offline answer.</p>
+
+        <h3>One question, step by step</h3>
+        <ol class="seq">
+          <li><b>Build the context.</b> <code>AiContextBuilder</code> serializes a compact snake_case JSON summary under the session gate: scan totals and completeness, drive capacity, the selected item with its risk reason and largest children, the 10 largest top-level items and files, the cleanup groups, and the growth since the previous scan. It is wrapped in <code>&lt;scan_context&gt;</code> before the question.</li>
+          <li><b>Checkpoint the transcript.</b> <code>AiConversation</code> is an append-only list of Messages API turns. A failed request rolls back to the checkpoint, so the next request is always valid.</li>
+          <li><b>Stream the request.</b> The text appears in the chat as it arrives, and the activity line shows what Claude is doing.</li>
+          <li><b>Run tools.</b> When <code>stop_reason</code> is <code>tool_use</code>, every tool call runs against the scan, and all results go back together in one user message. The loop allows at most 8 rounds.</li>
+          <li><b>Finish.</b> <code>pause_turn</code> continues the loop and <code>refusal</code> becomes a friendly error. <code>end_turn</code> or <code>max_tokens</code> gives the final text, with a "cut short" note for the latter. If <code>plan_cleanup</code> ran, the reply carries the <code>CleanupPlan</code>, which shows the <b>Clean these now…</b> button.</li>
+        </ol>
+
+        <h3>The request</h3>
+<pre><code>POST https://api.anthropic.com/v1/messages
+x-api-key: <span class="c">(from DPAPI, never logged)</span>
+anthropic-version: 2023-06-01
+
+{
+  <span class="s">"model"</span>: <span class="s">"claude-haiku-5-5"</span>,
+  <span class="s">"max_tokens"</span>: <span class="n">4096</span>,
+  <span class="s">"system"</span>: [{ <span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: <span class="s">"You are the storage assistant inside SpaceLens…"</span>,
+               <span class="s">"cache_control"</span>: { <span class="s">"type"</span>: <span class="s">"ephemeral"</span> } }],
+  <span class="s">"tools"</span>: [ <span class="c">/* 7 read-only tools */</span> ],
+  <span class="s">"output_config"</span>: { <span class="s">"effort"</span>: <span class="s">"medium"</span> },
+  <span class="s">"messages"</span>: [
+    { <span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: [{ <span class="s">"type"</span>: <span class="s">"text"</span>,
+      <span class="s">"text"</span>: <span class="s">"&lt;scan_context&gt;{ \"scan\": {…}, \"drive\": {…}, … }&lt;/scan_context&gt;\n\nHow can I free 20 GB?"</span> }] }
+  ],
+  <span class="s">"stream"</span>: <span class="k">true</span>
+}</code></pre>
+        <p>The system prompt is a constant marked for prompt caching, so it and the tool definitions form a prefix Anthropic can cache between questions. It requires Claude to use only facts from the context and tools, never to suggest High Risk or Protected items, to call <code>plan_cleanup</code> for "free X GB" questions, to cite paths as <code>[[full path]]</code> (rendered as links) and to treat file names as data, never as instructions. A conversation starts fresh after 12 questions to keep requests small.</p>
+
+        <h3>Tools</h3>
+        <p>Every tool is read-only. Results are capped (20 items by default, 50 at most), and every path must belong to the current scan.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tool</th><th>Input</th><th>Returns</th></tr></thead>
+            <tbody>
+              <tr><td><code>list_folder</code></td><td><code>path</code>, <code>limit</code></td><td>A folder's contents, largest first, with size, type, modified date and risk</td></tr>
+              <tr><td><code>find_large_files</code></td><td><code>path</code>, <code>min_size_mb</code> (100), <code>limit</code></td><td>The largest files anywhere below a folder</td></tr>
+              <tr><td><code>search_scan</code></td><td><code>query</code>, <code>limit</code></td><td>Files and folders whose name contains the text, largest first</td></tr>
+              <tr><td><code>get_item_details</code></td><td><code>path</code></td><td>Size, dates, risk with its reason and, for folders, a breakdown by file type</td></tr>
+              <tr><td><code>plan_cleanup</code></td><td><code>goal_gb</code></td><td>The Storage Goal Solver's plan (and the plan behind "Clean these now")</td></tr>
+              <tr><td><code>compare_with_previous_scan</code></td><td>none</td><td>Folders that grew or shrank and new large files since the previous scan</td></tr>
+              <tr><td><code>list_installed_apps</code></td><td><code>limit</code></td><td>Installed programs, largest first, with size, install date, last use and whether they can be uninstalled</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Streaming</h3>
+        <p><code>StreamMessageAsync</code> sends the same body with <code>"stream": true</code> and reads the response with <code class="w">HttpCompletionOption.ResponseHeadersRead</code>. <code>StreamedMessage</code> applies each server-sent event (<code>message_start</code>, <code>content_block_start</code>, <code>content_block_delta</code>, <code>content_block_stop</code>, <code>message_delta</code>, <code>error</code>) and rebuilds the complete message. Text, tool calls (<code>input_json_delta</code>, parsed at block stop), thinking blocks with signatures, and citations are all reassembled, so the tool loop receives exactly the object a non-streamed call returns. Text deltas also go to the UI through <code>IProgress&lt;string&gt;</code>.</p>
+
+        <h3>HTTP client and errors</h3>
+        <p>Each attempt has a 90-second timeout. Rate limits (429), overload (529) and server errors (5xx) are retried up to 3 attempts in total, waiting for the <code>retry-after</code> header or 1 s and then 3 s, and never longer than 10 s. Only status codes and retry decisions are logged, never the key or the request body.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Response</th><th>Shown as</th></tr></thead>
+            <tbody>
+              <tr><td>401 / authentication_error</td><td>The key wasn't accepted; check it or create a new one</td></tr>
+              <tr><td>402, billing_error or "credit balance"</td><td>Billing problem or credits too low</td></tr>
+              <tr><td>403 / permission_error</td><td>The key isn't allowed to make this request</td></tr>
+              <tr><td>404 / not_found_error</td><td>Claude Haiku 5.5 isn't available to this key</td></tr>
+              <tr><td>429 / rate_limit_error</td><td>Rate limit reached (retried first)</td></tr>
+              <tr><td>529 / overloaded_error</td><td>Claude is overloaded (retried first)</td></tr>
+              <tr><td>Other 5xx, timeouts, network errors</td><td>A temporary problem, then an offline answer</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>The API key and privacy</h3>
+        <ul>
+          <li>The key is encrypted with <b>DPAPI</b> for the current Windows user (<code class="w">DataProtectionScope.CurrentUser</code>), with app-specific entropy <code class="w">"SpaceLens.AnthropicApiKey.v1"</code>. It is saved as <code>anthropic.key.dpapi</code> through a temporary file and an atomic move. Plaintext buffers are zeroed after use, and only the last four characters are ever shown again.</li>
+          <li>Consent is a separate setting (<code>ShareScanDetails</code>). The assistant asks before the first Claude request.</li>
+          <li>Claude receives names, paths, sizes, dates and risk labels, and only the parts the question needs. File contents are never read for the AI and never sent.</li>
+          <li><code>chat.json</code> stores the conversation as the panel shows it (the last 100 messages), so it survives a restart. Claude's own transcript starts fresh in each session.</li>
+        </ul>
+      </section>
+
+      <!-- 11 -->
+      <section id="apps">
+        <h2><small>11</small>Apps and system space</h2>
+        <h3>Installed apps</h3>
+        <ul>
+          <li><b>Source:</b> <code class="w">SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall</code> in HKLM (64-bit and 32-bit views) and HKCU, the same entries Windows Settings › Apps lists. Entries with <code>SystemComponent = 1</code>, a <code>ParentKeyName</code> or an update <code>ReleaseType</code> are hidden, and duplicates are merged by name and version.</li>
+          <li><b>Size:</b> the scanned size of <code>InstallLocation</code> when the scan covers it, otherwise <code>EstimatedSize</code> from the installer.</li>
+          <li><b>Last used:</b> decoded from <b>UserAssist</b> (<code class="w">HKCU\…\Explorer\UserAssist\{CEBFF5CD…}\Count</code>). Value names are ROT13-encoded executable paths, and each 72-byte record holds the run count at offset 4 and the last-run <code>FILETIME</code> at offset 60. Records are matched to an app through its install folder and its icon's executable folder; bare Program Files and Windows folders are never used for matching. Windows only records programs started from Start, the taskbar or File Explorer.</li>
+          <li><b>Icons:</b> <code>ExtractIconExW</code> on the <code>DisplayIcon</code> value, converted to a frozen WPF bitmap.</li>
+          <li><b>Uninstall:</b> <code>UninstallCommandLine</code> splits <code>UninstallString</code> into program and arguments. It handles quoted and unquoted paths with spaces, expands environment variables, and rewrites <code>msiexec /I{…}</code> to <code>/X{…}</code>. The uninstaller runs through the shell and asks for administrator rights itself if it needs them.</li>
+        </ul>
+
+        <h3>System space</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Item</th><th>Measured from</th><th>Action offered</th></tr></thead>
+            <tbody>
+              <tr><td>Hibernation file</td><td><code>hiberfil.sys</code> length</td><td><code>powercfg /hibernate off</code> (elevated, after confirmation)</td></tr>
+              <tr><td>Virtual memory</td><td><code>pagefile.sys</code> + <code>swapfile.sys</code></td><td>Opens <code class="w">SystemPropertiesPerformance.exe</code></td></tr>
+              <tr><td>Previous Windows</td><td><code>Windows.old</code>, <code>$Windows.~BT</code>, <code>$Windows.~WS</code></td><td>Opens Storage › Temporary files</td></tr>
+              <tr><td>Update downloads</td><td><code class="w">SoftwareDistribution\Download</code></td><td>Opens Storage › Temporary files</td></tr>
+              <tr><td>Component store</td><td><code>WinSxS</code></td><td><code class="w">Dism /Online /Cleanup-Image /StartComponentCleanup</code> in an elevated window</td></tr>
+              <tr><td>Restore points</td><td>Unknown without admin rights</td><td>Opens <code class="w">SystemPropertiesProtection.exe</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Folder sizes come from the current scan when it covers the folder; otherwise the folder is enumerated, skipping reparse points and counting whatever is readable. SpaceLens never deletes any of these itself.</p>
+      </section>
+
+      <!-- 12 -->
+      <section id="windows">
+        <h2><small>12</small>Windows integration</h2>
+        <p>Everything is written under the current user (HKCU, the user's desktop and Start menu), so nothing needs administrator rights and other accounts are untouched.</p>
+
+        <h3>Right-click menu</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Key under HKCU\Software\Classes</th><th>Command</th></tr></thead>
+            <tbody>
+              <tr><td><code>Directory\shell\SpaceLens</code></td><td><code class="w">"…\SpaceLens.exe" --scan "%1"</code> (a folder)</td></tr>
+              <tr><td><code>Drive\shell\SpaceLens</code></td><td><code class="w">"…\SpaceLens.exe" --scan "%1"</code> (a drive)</td></tr>
+              <tr><td><code class="w">Directory\Background\shell\SpaceLens</code></td><td><code class="w">"…\SpaceLens.exe" --scan "%V"</code> (the open folder)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>For a drive root Explorer passes <code>C:\</code>, so the quoted argument arrives as <code>C:"</code>. <code>StartupOptions.CleanPath</code> repairs it. Windows 11 shows the entry under Show more options.</p>
+
+        <h3>Shortcuts and the Apps-list entry</h3>
+        <ul>
+          <li><code>SpaceLens.lnk</code> on the desktop and in Start Menu\Programs, written with the <code>WScript.Shell</code> COM object (target, working folder, icon, description).</li>
+          <li><code class="w">HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\SpaceLens</code> with <code>DisplayName</code>, <code>DisplayVersion</code>, <code>Publisher</code>, <code>DisplayIcon</code>, <code>InstallLocation</code>, <code>InstallDate</code>, <code>EstimatedSize</code>, <code>NoModify</code>, <code>NoRepair</code> and <code class="w">UninstallString = "…\SpaceLens.exe" --uninstall</code>.</li>
+        </ul>
+
+        <h3>Daily check</h3>
+        <p><code>DailyCheckScheduler</code> registers the task <b>"SpaceLens daily check"</b> with <code>schtasks /Create /XML … /F</code>, writing the definition as UTF-16 because that's what schtasks reads. Notable settings: a daily calendar trigger at 12:00, <code>InteractiveToken</code> with <code>LeastPrivilege</code> (the signed-in user, no elevation), <code>StartWhenAvailable</code> (catch up after the PC was off), it runs on battery, has a 30-minute limit and <code>IgnoreNew</code> for overlaps. The action runs <code>SpaceLens.exe --check</code>.</p>
+        <ol class="seq">
+          <li><b>Low space.</b> For every fixed drive, compare free space with the chosen share (5 to 25%).</li>
+          <li><b>Growth.</b> Scan the system drive, save it to history and compare it with the previous snapshot. Alert if it grew by at least the chosen amount (2 to 50 GB), naming the folder that grew most.</li>
+          <li><b>Report.</b> No alerts: exit silently. Otherwise show the corner card (closes after 45 s unless hovered) with Open SpaceLens and Dismiss.</li>
+        </ol>
+
+        <h3>Installer</h3>
+        <div class="two">
+          <div class="box">
+            <h4>Install (<code>--install</code> or Settings)</h4>
+            <ul>
+              <li>Works only from the single-file build. A development build with <code>SpaceLens.Core.dll</code> beside it is refused.</li>
+              <li>Copies the exe to <code class="w">%LOCALAPPDATA%\Programs\SpaceLens</code> and deletes its <code>Zone.Identifier</code> stream, so the installed copy doesn't trigger SmartScreen on every start.</li>
+              <li>Creates the shortcuts, the right-click menu and the Apps-list entry, and re-points an existing daily task at the installed copy.</li>
+              <li>Starts the installed copy with <code>--welcome</code>.</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h4>Uninstall (<code>--uninstall</code>)</h4>
+            <ul>
+              <li>Refuses while the installed copy is open in another process.</li>
+              <li>Asks for confirmation, then removes the shortcuts, the menu, the scheduled task and the Apps-list entry.</li>
+              <li>A running exe can't delete itself, so a hidden <code class="w">cmd /c ping -n 3 127.0.0.1 &gt;nul &amp; rmdir /s /q "…"</code> removes the folder a moment after exit.</li>
+              <li>Scan history and settings in <code>%LOCALAPPDATA%\SpaceLens</code> are kept.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 13 -->
+      <section id="data">
+        <h2><small>13</small>Data on disk</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Path</th><th>Holds</th></tr></thead>
+            <tbody>
+              <tr><td><code class="w">%LOCALAPPDATA%\SpaceLens\scans.db</code></td><td>Scan history (SQLite, WAL)</td></tr>
+              <tr><td><code>…\settings.json</code></td><td>Consent, model, never-touch folders, alert thresholds</td></tr>
+              <tr><td><code>…\anthropic.key.dpapi</code></td><td>The API key, DPAPI-encrypted for this Windows user</td></tr>
+              <tr><td><code>…\cleanup-log.json</code></td><td>The History page (last 500 actions)</td></tr>
+              <tr><td><code>…\chat.json</code></td><td>The chat as shown (last 100 messages)</td></tr>
+              <tr><td><code>…\logs\spacelens.log</code></td><td>Warnings and errors, never the key</td></tr>
+              <tr><td><code class="w">%LOCALAPPDATA%\Programs\SpaceLens\SpaceLens.exe</code></td><td>The installed program</td></tr>
+              <tr><td><code class="w">HKCU\Software\Classes\…\shell\SpaceLens</code></td><td>The right-click menu (three keys)</td></tr>
+              <tr><td><code class="w">HKCU\…\CurrentVersion\Uninstall\SpaceLens</code></td><td>The Settings › Apps entry</td></tr>
+              <tr><td>Task Scheduler › SpaceLens daily check</td><td>Only while alerts are turned on</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 14 -->
+      <section id="build">
+        <h2><small>14</small>Build, packaging and tests</h2>
+        <ul>
+          <li><b>Strict build.</b> <code>Directory.Build.props</code> turns on nullable reference types, the latest analyzers, code style checks during build and <code>TreatWarningsAsErrors</code>. <code>.editorconfig</code> sets naming (<code>_camelCase</code> fields, <code>I</code>-prefixed interfaces), file-scoped namespaces and unused-using errors, with one type per file. <code>global.json</code> pins the .NET 9 SDK, rolling forward to the latest feature band.</li>
+          <li><b><code>run.cmd</code></b> starts <code class="w">artifacts\publish\win-x64\SpaceLens.exe</code>. It rebuilds first if the exe is missing, or if any file under <code>src</code>, <code>Directory.Build.props</code> or <code>global.json</code> is newer than <code>last-build.stamp</code>. It builds with the .NET 9 SDK, or with Docker if the SDK is missing.</li>
+          <li><b><code>package.cmd</code></b> publishes a self-contained single file (<code class="w">-r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none</code>), adds <code>Install SpaceLens.cmd</code> and a README, and zips them to <code>dist\SpaceLens.zip</code>, about 60 MB. That zip is committed so it can be downloaded without building.</li>
+          <li><b>Docker.</b> The <code>Dockerfile</code> builds the whole solution in a Linux container, with the same analyzers, and exports the Windows exe. It's a reproducible build environment; the app itself runs on the Windows desktop.</li>
+          <li><b>Tests.</b> 148 xUnit tests run Core services against fakes and temporary folders, plus view-model behaviour (consent, duplicate safety, plan selection, streaming, never-touch folders, the map layout). <code>scripts\SmokeTest.ps1</code> drives the real window through UI Automation in 10 steps. <code>scripts\MakeIcon.ps1</code> renders the in-app logo into the exe icon.</li>
+        </ul>
+      </section>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>SpaceLens</span>
+    <a href="features.html">← What SpaceLens does (features)</a>
+  </div>
+</footer>
+
+</body>
+</html>
