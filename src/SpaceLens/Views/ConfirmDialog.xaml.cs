@@ -13,6 +13,7 @@ public partial class ConfirmDialog : Window
         TitleText.Text = request.Title;
         MessageText.Text = request.Message;
         ConfirmButton.Content = request.ConfirmText;
+        CancelButton.Content = request.CancelText;
         CancelButton.Visibility = request.ShowCancel ? Visibility.Visible : Visibility.Collapsed;
 
         DetailsList.ItemsSource = request.Details;

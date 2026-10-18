@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>How SpaceLens Works</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 38'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2338B2FF'/%3E%3Cstop offset='1' stop-color='%231660E0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='38' height='38' rx='11' fill='url(%23g)'/%3E%3Ccircle cx='19' cy='19' r='8.4' fill='none' stroke='white' stroke-width='3.2'/%3E%3Ccircle cx='24.5' cy='13.5' r='3' fill='white'/%3E%3C/svg%3E">
 <meta name="description" content="Technical details of SpaceLens: architecture, scanner, cleanup engine, history, duplicates, the Claude integration and Windows integration.">
 <style>
   :root {
@@ -282,7 +283,7 @@
           <table>
             <thead><tr><th>Argument</th><th>What runs</th><th>Window</th></tr></thead>
             <tbody>
-              <tr><td>(none)</td><td>Main window and <code class="w">MainViewModel.InitializeAsync()</code>, then the <code>StartupOptions</code> switches: <code>--scan</code>, <code>--select</code>, <code>--page</code>, <code>--ask</code>, <code>--capture</code>, <code>--welcome</code></td><td>Full screen</td></tr>
+              <tr><td>(none)</td><td>Main window and <code class="w">MainViewModel.InitializeAsync()</code>. A packaged copy that isn't the installed one then offers to install itself, or to update an installed copy that is a different build (compared by SHA-256). Started with options, the <code>StartupOptions</code> switches run instead: <code>--scan</code>, <code>--select</code>, <code>--page</code>, <code>--ask</code>, <code>--capture</code>, <code>--welcome</code></td><td>Full screen</td></tr>
               <tr><td><code>--check</code></td><td>The daily check from Task Scheduler. It runs <code>IDriveCheck</code> and exits, or shows the alert card first when there is something to report</td><td>Only the alert card</td></tr>
               <tr><td><code>--install</code></td><td><code>Installer.Install()</code>, then starts the installed copy with <code>--welcome</code></td><td>Dialogs only</td></tr>
               <tr><td><code>--uninstall</code></td><td><code>Installer.Uninstall()</code>, run by Windows Settings › Apps</td><td>Dialogs only</td></tr>
@@ -604,12 +605,13 @@ anthropic-version: 2023-06-01
         <h3>Installer</h3>
         <div class="two">
           <div class="box">
-            <h4>Install (<code>--install</code> or Settings)</h4>
+            <h4>Install (first start, Settings or <code>--install</code>)</h4>
             <ul>
               <li>Works only from the single-file build. A development build with <code>SpaceLens.Core.dll</code> beside it is refused.</li>
               <li>Copies the exe to <code class="w">%LOCALAPPDATA%\Programs\SpaceLens</code> and deletes its <code>Zone.Identifier</code> stream, so the installed copy doesn't trigger SmartScreen on every start.</li>
               <li>Creates the shortcuts, the right-click menu and the Apps-list entry, and re-points an existing daily task at the installed copy.</li>
-              <li>Starts the installed copy with <code>--welcome</code>.</li>
+              <li>Tells Explorer the shortcuts and the exe changed (<code>SHChangeNotify</code>), so the desktop draws the current icon instead of a cached one.</li>
+              <li>Starts the installed copy with <code>--welcome</code>. "Not now" stores the build's hash so the same file doesn't ask again.</li>
             </ul>
           </div>
           <div class="box">
@@ -652,7 +654,7 @@ anthropic-version: 2023-06-01
         <ul>
           <li><b>Strict build.</b> <code>Directory.Build.props</code> turns on nullable reference types, the latest analyzers, code style checks during build and <code>TreatWarningsAsErrors</code>. <code>.editorconfig</code> sets naming (<code>_camelCase</code> fields, <code>I</code>-prefixed interfaces), file-scoped namespaces and unused-using errors, with one type per file. <code>global.json</code> pins the .NET 9 SDK, rolling forward to the latest feature band.</li>
           <li><b><code>run.cmd</code></b> starts <code class="w">artifacts\publish\win-x64\SpaceLens.exe</code>. It rebuilds first if the exe is missing, or if any file under <code>src</code>, <code>Directory.Build.props</code> or <code>global.json</code> is newer than <code>last-build.stamp</code>. It builds with the .NET 9 SDK, or with Docker if the SDK is missing.</li>
-          <li><b><code>package.cmd</code></b> publishes a self-contained single file (<code class="w">-r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none</code>), adds <code>Install SpaceLens.cmd</code> and a README, and zips them to <code>dist\SpaceLens.zip</code>, about 60 MB. That zip is committed so it can be downloaded without building.</li>
+          <li><b><code>package.cmd</code></b> publishes a self-contained single file (<code class="w">-r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none</code>), adds a README, and zips them to <code>dist\SpaceLens.zip</code>, about 60 MB. That zip is committed so it can be downloaded without building.</li>
           <li><b>Docker.</b> The <code>Dockerfile</code> builds the whole solution in a Linux container, with the same analyzers, and exports the Windows exe. It's a reproducible build environment; the app itself runs on the Windows desktop.</li>
           <li><b>Tests.</b> 157 xUnit tests run Core services against fakes and temporary folders, plus view-model behaviour (consent, duplicate safety, plan selection, streaming, never-touch folders, the map layout). <code>scripts\SmokeTest.ps1</code> drives the real window through UI Automation in 10 steps. <code>scripts\MakeIcon.ps1</code> renders the in-app logo into the exe icon.</li>
         </ul>

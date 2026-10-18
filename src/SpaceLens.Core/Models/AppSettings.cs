@@ -18,4 +18,7 @@ public sealed record AppSettings
 
     /// <summary>Alert when the system drive grew by at least this much since the previous daily check.</summary>
     public int GrowthAlertGb { get; init; } = 5;
+
+    /// <summary>The SpaceLens.exe build (its SHA-256) the user chose not to install, so it doesn't ask again.</summary>
+    public string? SkippedInstallBuild { get; init; }
 }

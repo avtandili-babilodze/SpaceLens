@@ -22,6 +22,11 @@ internal static class NativeMethods
     public const uint SherbNoConfirmation = 0x1;
     public const uint SherbNoProgressUi = 0x2;
     public const uint SherbNoSound = 0x4;
+    public const int ShcneUpdateItem = 0x00002000;
+    public const int ShcneAssocChanged = 0x08000000;
+    public const uint ShcnfIdList = 0x0000;
+    public const uint ShcnfPathW = 0x0005;
+    public const uint ShcnfFlush = 0x1000;
 
     /// <summary>E_UNEXPECTED, which SHEmptyRecycleBin returns when the Recycle Bin is already empty.</summary>
     public const int RecycleBinAlreadyEmpty = unchecked((int)0x8000FFFF);
@@ -53,6 +58,9 @@ internal static class NativeMethods
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     public static extern int SHEmptyRecycleBinW(IntPtr window, string rootPath, uint flags);
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    public static extern void SHChangeNotify(int eventId, uint flags, string? item1, IntPtr item2);
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     public static extern int SHGetKnownFolderPath(

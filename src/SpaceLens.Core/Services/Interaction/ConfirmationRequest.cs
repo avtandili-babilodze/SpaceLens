@@ -10,4 +10,6 @@ public sealed record ConfirmationRequest(
     bool IsDestructive = false)
 {
     public bool ShowCancel { get; init; } = true;
+
+    public string CancelText { get; init; } = "Cancel";
 }

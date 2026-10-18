@@ -1,22 +1,26 @@
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using SpaceLens.Core.Configuration;
 using SpaceLens.Core.Services.Cleanup;
 using SpaceLens.Core.Services.Integration;
 using SpaceLens.Core.Services.Interaction;
+using SpaceLens.Core.Services.Settings;
 
 namespace SpaceLens.Infrastructure;
 
 /// <summary>
 /// Installs the single-file SpaceLens.exe for the current user: a copy in %LOCALAPPDATA%\Programs\SpaceLens, desktop and
 /// Start menu shortcuts, the right-click menu entry and an entry in Settings › Apps. No administrator rights needed.
-/// Uninstalling removes all of that but keeps scan history and settings.
+/// A downloaded copy offers to install itself when it starts. Uninstalling removes all of that but keeps scan history
+/// and settings.
 /// </summary>
 public sealed class Installer(
     IShellIntegration shell,
     IDailyCheckScheduler scheduler,
     IConfirmationService dialogs,
+    ISettingsStore settings,
     AppPaths paths,
     ILogger<Installer> logger)
 {
@@ -125,14 +129,77 @@ public sealed class Installer(
         }
     }
 
-    /// <summary>Installs from a portable copy that's running, then hands over to the installed copy.</summary>
-    public void InstallAndSwitch()
+    /// <summary>Installs from a portable copy that's running, then hands over to the installed copy. True when it did.</summary>
+    public bool InstallAndSwitch()
     {
-        if (Install())
+        if (!Install())
         {
-            Process.Start(new ProcessStartInfo(InstalledPath, "--welcome") { UseShellExecute = false });
-            System.Windows.Application.Current.Shutdown();
+            return false;
         }
+
+        Process.Start(new ProcessStartInfo(InstalledPath, "--welcome") { UseShellExecute = false });
+        System.Windows.Application.Current.Shutdown();
+        return true;
+    }
+
+    /// <summary>
+    /// Started from a downloaded or freshly built SpaceLens.exe, offers to install it, or to replace an installed copy
+    /// that is a different build, so the desktop and Start menu always open the same SpaceLens. "Not now" isn't asked
+    /// again for the same build. True when SpaceLens is handing over to the installed copy and this one is closing.
+    /// </summary>
+    public async Task<bool> OfferInstallAsync()
+    {
+        if (!CanInstall || IsRunningInstalledCopy)
+        {
+            return false;
+        }
+
+        var (build, isSameAsInstalled) = await Task.Run(() => CompareWithInstalled(Environment.ProcessPath!));
+        if (isSameAsInstalled || settings.Current.SkippedInstallBuild == build)
+        {
+            return false;
+        }
+
+        var request = File.Exists(InstalledPath)
+            ? new ConfirmationRequest(
+                "Update the installed SpaceLens?",
+                "The SpaceLens your desktop and Start menu open is a different version. Replace it with this one?",
+                "Update")
+            : new ConfirmationRequest(
+                "Install SpaceLens on this PC?",
+                "Adds SpaceLens to your desktop and Start menu, and Analyze with SpaceLens to File Explorer's right-click menu. "
+                    + "Only your Windows account is changed; no administrator rights are needed.",
+                "Install",
+                Footnote: "You can also install it later in Settings.");
+        if (dialogs.Confirm(request with { CancelText = "Not now" }))
+        {
+            return InstallAndSwitch();
+        }
+
+        settings.Save(settings.Current with { SkippedInstallBuild = build });
+        return false;
+    }
+
+    /// <summary>This build's SHA-256, and whether the installed copy is the same file (only hashed when the sizes match).</summary>
+    private static (string Build, bool IsSameAsInstalled) CompareWithInstalled(string path)
+    {
+        var build = Hash(path);
+        try
+        {
+            var installed = new FileInfo(InstalledPath);
+            var isSame = installed.Exists && installed.Length == new FileInfo(path).Length && Hash(InstalledPath) == build;
+            return (build, isSame);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return (build, false);
+        }
+    }
+
+    private static string Hash(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(stream));
     }
 
     /// <summary>Asks first, then removes everything Install added. True when it was removed.</summary>

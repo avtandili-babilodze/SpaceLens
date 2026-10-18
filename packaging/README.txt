@@ -3,14 +3,17 @@ SpaceLens - see what's filling your drive and free space safely
 
 Install
   1. Unzip SpaceLens.zip (right-click it > Extract All).
-  2. Double-click "Install SpaceLens.cmd".
-     SpaceLens opens, and a shortcut appears on your desktop and in the Start menu.
+  2. Double-click SpaceLens.exe and choose Install.
+     SpaceLens opens, and its shortcut appears on your desktop and in the Start menu.
 
   If Windows says "Windows protected your PC", click More info > Run anyway.
   SpaceLens isn't code-signed, so Windows doesn't recognise it yet.
 
-Run it without installing
-  Double-click SpaceLens.exe. You can install it later from Settings > SpaceLens on this PC.
+  Choose "Not now" to use it without installing. You can install it later from
+  Settings > SpaceLens on this PC.
+
+Update
+  Double-click the new SpaceLens.exe and choose Update.
 
 Uninstall
   Windows Settings > Apps > Installed apps > SpaceLens > Uninstall.

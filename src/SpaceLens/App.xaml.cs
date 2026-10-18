@@ -61,6 +61,14 @@ public partial class App : Application
         window.Show();
 
         await viewModel.InitializeAsync();
+
+        // A downloaded or newly built SpaceLens.exe offers to install itself, so the desktop always opens this version.
+        // Starts with options (the right-click menu, automation) never ask.
+        if (e.Args.Length == 0 && await _services.GetRequiredService<Installer>().OfferInstallAsync())
+        {
+            return;
+        }
+
         await StartupOptions.Parse(e.Args).ApplyAsync(viewModel, window);
     }
 

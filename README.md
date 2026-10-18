@@ -16,13 +16,12 @@ Double-click **`run.cmd`**. It builds SpaceLens when needed (with the .NET 9 SDK
 
 Double-click **`package.cmd`**. It builds `dist\SpaceLens.zip` (about 60 MB) with:
 
-* `SpaceLens.exe`: self-contained, so the other PC needs nothing but Windows 10 or 11 (64-bit);
-* `Install SpaceLens.cmd`: installs it for that Windows user, with no administrator rights: a copy in `%LOCALAPPDATA%\Programs\SpaceLens`, desktop and Start menu shortcuts, "Analyze with SpaceLens" in File Explorer's right-click menu and an entry in Settings › Apps (whose Uninstall removes all of it again, keeping scan history and settings);
+* `SpaceLens.exe`: self-contained, so the other PC needs nothing but Windows 10 or 11 (64-bit). The first time it starts it offers to install itself for that Windows user, with no administrator rights: a copy in `%LOCALAPPDATA%\Programs\SpaceLens`, desktop and Start menu shortcuts, "Analyze with SpaceLens" in File Explorer's right-click menu and an entry in Settings › Apps (whose Uninstall removes all of it again, keeping scan history and settings). A newer `SpaceLens.exe` offers to update the installed one, so the desktop shortcut always opens the latest version;
 * `README.txt` with those steps for the recipient.
 
 The latest zip is also committed to this repository as [`dist/SpaceLens.zip`](dist/SpaceLens.zip), so anyone can download it from GitHub (open the file › Download raw file) or take it from a clone, without building anything. Run `package.cmd` again before committing source changes so it stays current.
 
-They unzip it and double-click `Install SpaceLens.cmd`; SpaceLens opens and its shortcut is on the desktop. `SpaceLens.exe` also runs without installing, and can install itself later from Settings. The build isn't code-signed, so Windows SmartScreen may ask them to confirm (More info › Run anyway).
+They unzip it, double-click `SpaceLens.exe` and choose **Install**; SpaceLens opens and its shortcut is on the desktop, with the same icon as the app everywhere. **Not now** runs it without installing (it doesn't ask again for that version), and Settings can install it later. A build started by `run.cmd` makes the same offer, so your installed copy can follow your source changes. The build isn't code-signed, so Windows SmartScreen may ask them to confirm (More info › Run anyway).
 
 ## Build, run, test, publish
 

@@ -1,6 +1,6 @@
 @echo off
-rem Builds dist\SpaceLens.zip, the file to send to someone: SpaceLens.exe (self-contained, so they don't need .NET),
-rem "Install SpaceLens.cmd" (installs it for their Windows user with desktop and Start menu shortcuts) and a README.
+rem Builds dist\SpaceLens.zip, the file to send to someone: SpaceLens.exe (self-contained, so they don't need .NET;
+rem it offers to install itself, with desktop and Start menu shortcuts, the first time it starts) and a README.
 rem Needs the .NET 9 SDK or, if that isn't installed, Docker, like run.cmd.
 
 setlocal
@@ -37,7 +37,6 @@ if errorlevel 1 goto failed
 
 :package
 del /q "%STAGE%\*.pdb" 2>nul
-copy /y "packaging\Install SpaceLens.cmd" "%STAGE%\" >nul
 copy /y "packaging\README.txt" "%STAGE%\" >nul
 if not exist dist mkdir dist
 powershell -NoProfile -Command "Compress-Archive -Path '%STAGE%\*' -DestinationPath '%ZIP%' -Force"
@@ -45,7 +44,7 @@ if errorlevel 1 goto failed
 
 echo.
 echo Created %ZIP%
-echo Send it to anyone with Windows 10 or 11 (64-bit). They unzip it and double-click "Install SpaceLens.cmd".
+echo Send it to anyone with Windows 10 or 11 (64-bit). They unzip it, double-click SpaceLens.exe and choose Install.
 exit /b 0
 
 :failed

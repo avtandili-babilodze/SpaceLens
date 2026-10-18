@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using SpaceLens.Core.Interop;
 
 namespace SpaceLens.Core.Services.Integration;
 
@@ -65,6 +66,8 @@ public sealed class ShellIntegration : IShellIntegration
         {
             CreateShortcut(path, executablePath);
         }
+
+        RefreshIcons([executablePath, .. ShortcutPaths()]);
     }
 
     public void RemoveShortcuts()
@@ -99,6 +102,20 @@ public sealed class ShellIntegration : IShellIntegration
         Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), ShortcutName),
         Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Programs), ShortcutName)
     ];
+
+    /// <summary>
+    /// Explorer keeps icons it has drawn in a cache, so a replaced SpaceLens.exe could still show an older icon on the
+    /// desktop. Telling it these files changed, and that icons may have, makes it draw them again.
+    /// </summary>
+    private static void RefreshIcons(IEnumerable<string> paths)
+    {
+        foreach (var path in paths)
+        {
+            NativeMethods.SHChangeNotify(NativeMethods.ShcneUpdateItem, NativeMethods.ShcnfPathW | NativeMethods.ShcnfFlush, path, IntPtr.Zero);
+        }
+
+        NativeMethods.SHChangeNotify(NativeMethods.ShcneAssocChanged, NativeMethods.ShcnfIdList, null, IntPtr.Zero);
+    }
 
     /// <summary>Uses the Windows Script Host shell object, which writes standard .lnk files.</summary>
     private static void CreateShortcut(string shortcutPath, string executablePath)
