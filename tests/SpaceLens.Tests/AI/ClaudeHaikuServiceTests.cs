@@ -35,7 +35,7 @@ public sealed class ClaudeHaikuServiceTests
         var activity = new List<string>();
 
         var progress = new SyncProgress(activity.Add);
-        var reply = await service.AskAsync(conversation, "What is in Downloads?", null, progress, CancellationToken.None);
+        var reply = await service.AskAsync(conversation, "What is in Downloads?", null, progress, null, CancellationToken.None);
 
         Assert.Contains("Old installers", reply.Text);
         Assert.Equal(["Looking inside Downloads"], activity);
@@ -58,7 +58,7 @@ public sealed class ClaudeHaikuServiceTests
         var (service, handler, _) = await CreateAsync(
             Reply("""{"type":"message","stop_reason":"end_turn","content":[{"type":"text","text":"Hi"}]}"""));
 
-        await service.AskAsync(new AiConversation(), "Why is my drive full?", null, null, CancellationToken.None);
+        await service.AskAsync(new AiConversation(), "Why is my drive full?", null, null, null, CancellationToken.None);
 
         var body = JsonNode.Parse(handler.Requests[0].Body)!.AsObject();
         Assert.Equal("claude-haiku-5-5", body["model"]!.GetValue<string>());
@@ -76,7 +76,7 @@ public sealed class ClaudeHaikuServiceTests
             Reply("""{"type":"message","stop_reason":"tool_use","content":[{"type":"tool_use","id":"t1","name":"plan_cleanup","input":{"goal_gb":2}}]}"""),
             Reply("""{"type":"message","stop_reason":"end_turn","content":[{"type":"text","text":"Here is a plan."}]}"""));
 
-        var reply = await service.AskAsync(new AiConversation(), "Free 2 GB", null, null, CancellationToken.None);
+        var reply = await service.AskAsync(new AiConversation(), "Free 2 GB", null, null, null, CancellationToken.None);
 
         Assert.NotNull(reply.Plan);
         Assert.Equal(2 * ByteSize.GB, reply.Plan!.GoalBytes);
@@ -90,7 +90,7 @@ public sealed class ClaudeHaikuServiceTests
             Reply("""{"type":"message","stop_reason":"tool_use","content":[{"type":"tool_use","id":"t1","name":"list_folder","input":{"path":"Z:\\Nope"}}]}"""),
             Reply("""{"type":"message","stop_reason":"end_turn","content":[{"type":"text","text":"I couldn't find it."}]}"""));
 
-        await service.AskAsync(new AiConversation(), "List Z:", null, null, CancellationToken.None);
+        await service.AskAsync(new AiConversation(), "List Z:", null, null, null, CancellationToken.None);
 
         var toolResult = JsonNode.Parse(handler.Requests[1].Body)!["messages"]![2]!["content"]![0]!;
         Assert.True(toolResult["is_error"]!.GetValue<bool>());
@@ -103,7 +103,7 @@ public sealed class ClaudeHaikuServiceTests
         var conversation = new AiConversation();
 
         var error = await Assert.ThrowsAsync<AiServiceException>(() =>
-            service.AskAsync(conversation, "Something", null, null, CancellationToken.None));
+            service.AskAsync(conversation, "Something", null, null, null, CancellationToken.None));
 
         Assert.Equal(AiErrorKind.Refused, error.Kind);
         Assert.Equal(0, conversation.Checkpoint());
@@ -144,7 +144,7 @@ public sealed class ClaudeHaikuServiceTests
             """));
         var conversation = new AiConversation();
 
-        var reply = await service.AskAsync(conversation, "Why is my drive full?", null, null, CancellationToken.None);
+        var reply = await service.AskAsync(conversation, "Why is my drive full?", null, null, null, CancellationToken.None);
 
         Assert.StartsWith("Most of the space is in Downloads.", reply.Text);
         Assert.Contains("cut short", reply.Text);

@@ -8,7 +8,17 @@ Built with **C# 13, .NET 9, WPF/XAML, CommunityToolkit.Mvvm, Microsoft.Extension
 
 ## Quick start
 
-Double-click **`run.cmd`**. It builds SpaceLens the first time (with the .NET 9 SDK, or Docker if the SDK isn't installed) and starts it; after that it starts straight away. Use `run.cmd --rebuild` after changing the source.
+Double-click **`run.cmd`**. It builds SpaceLens when needed (with the .NET 9 SDK, or Docker if the SDK isn't installed) and starts it: the first time, and again whenever a file under `src` changed since the last build, so it always opens the newest version. `run.cmd --rebuild` builds even when nothing changed.
+
+## Send it to someone
+
+Double-click **`package.cmd`**. It builds `dist\SpaceLens.zip` (about 60 MB) with:
+
+* `SpaceLens.exe`: self-contained, so the other PC needs nothing but Windows 10 or 11 (64-bit);
+* `Install SpaceLens.cmd`: installs it for that Windows user, with no administrator rights: a copy in `%LOCALAPPDATA%\Programs\SpaceLens`, desktop and Start menu shortcuts, "Analyze with SpaceLens" in File Explorer's right-click menu and an entry in Settings › Apps (whose Uninstall removes all of it again, keeping scan history and settings);
+* `README.txt` with those steps for the recipient.
+
+They unzip it and double-click `Install SpaceLens.cmd`; SpaceLens opens and its shortcut is on the desktop. `SpaceLens.exe` also runs without installing, and can install itself later from Settings. The build isn't code-signed, so Windows SmartScreen may ask them to confirm (More info › Run anyway).
 
 ## Build, run, test, publish
 
@@ -47,18 +57,23 @@ dotnet build SpaceLens.sln
 powershell -ExecutionPolicy Bypass -File scripts/SmokeTest.ps1
 ```
 
-Command-line switches for demos and automation: `--scan <path>`, `--select <path>`, `--page <Overview|Folders|Cleanup|Compare|Duplicates|Settings>`, `--ask "<question>"`, `--capture <file.png>` (saves a screenshot and exits).
+Command-line switches for demos and automation: `--scan <path>`, `--select <path>`, `--page <Overview|Folders|Cleanup|Apps|SystemSpace|Duplicates|Compare|History|Settings>`, `--ask "<question>"`, `--capture <file.png>` (saves a screenshot and exits). Windows uses `--check` (the scheduled daily check), `--install`, `--uninstall` and `--welcome`.
 
 ## What it does
 
 | Page | |
 |---|---|
 | **Overview** | Drive usage ring, low-risk recoverable space, files over 1 GB, growth since the previous scan, the folder tree with recursive sizes, the item table (name, size, type, modified, cleanup risk), a details panel with a storage breakdown and largest files, and the assistant. |
-| **Folders** | The same explorer with more room. Breadcrumbs, up, filters (folders, files, > 1 GB, cleanup candidates), sorting on every column, search across the whole scan, multi-select with check boxes, context menus. |
+| **Folders** | The same explorer with more room. Breadcrumbs, up, filters (folders, files, > 1 GB, cleanup candidates), sorting on every column, search across the whole scan, multi-select with check boxes, context menus. **List or Map**: the map shows the folder as tiles sized by the space they use and colored by file type, with big folders' contents nested inside (click selects, double-click opens). Items can be **moved to another drive** (File Explorer's own copy window; frees the space here, loses nothing) or marked **Never suggest for cleanup**. |
 | **Cleanup** | The **Storage Goal Solver**: enter "20 GB" and it builds the lowest-risk plan — whole low-risk groups first, then only as many reviewable items as the goal needs. High-risk and protected items are never used. |
-| **Compare** | Any two saved scans of the same location: folders that grew or shrank (only the most specific folders, so `C:\Users` isn't repeated when `Videos` explains it), and new large files. |
+| **Apps** | Installed programs (the same list as Settings › Apps) with their size — measured from the scan when it covers the app's folder — and when each was last started from Start, the taskbar or File Explorer (Windows' UserAssist record). Uninstall runs the app's own uninstaller after a confirmation. |
+| **System space** | What Windows keeps for itself on the system drive: hibernation file, page file, previous Windows installation, update downloads, component store, restore points. Each card explains the trade-off and opens the Windows tool that shrinks it safely (powercfg, Temporary files, DISM, System Protection); SpaceLens never deletes any of it. |
 | **Duplicates** | Same size → first/last 64 KB fingerprint → full SHA-256. Hard links aren't counted as duplicates; system and app files are left out. |
-| **Settings** | Anthropic API key (masked, DPAPI-encrypted), connection test, consent, data folder, history reset. |
+| **Compare** | Any two saved scans of the same location: folders that grew or shrank (only the most specific folders, so `C:\Users` isn't repeated when `Videos` explains it), and new large files. |
+| **History** | Everything SpaceLens moved to the Recycle Bin or to another drive, with how much was cleaned up this month and overall. |
+| **Settings** | Anthropic API key (masked, DPAPI-encrypted), connection test, consent; never-touch folders; daily low-space alerts; install and the right-click menu; data folder, history reset. |
+
+**Daily alerts.** Turning them on creates a Windows scheduled task (current user, no administrator rights) that runs `SpaceLens.exe --check` around noon, or soon after the PC starts if it was off. The check looks for drives below the chosen free-space share and scans the system drive to compare it with its previous scan; only when something needs attention does a card appear in the corner of the screen.
 
 ### Scanner
 
@@ -76,7 +91,9 @@ Every item gets **Low Risk**, **Review Required**, **High Risk** or **Protected*
 * **Low Risk** — temp files older than two days, browser and app caches, package-manager caches, crash dumps, installers in Downloads older than two weeks, the Recycle Bin.
 * **Review Required** — everything else; size alone never makes a file unnecessary.
 
-Nothing is removed automatically. Removal always goes through a confirmation that lists the items, re-checks every item's risk (protected and high-risk items are dropped), and uses the **Recycle Bin**, so it can be undone. Emptying the Recycle Bin is a separate, explicitly confirmed step.
+Folders on the **never-touch list** (Settings, or right-click › Never suggest for cleanup) count as Protected, with everything inside them.
+
+Nothing is removed automatically. Removal always goes through a confirmation that lists the items, re-checks every item's risk (protected and high-risk items are dropped), and uses the **Recycle Bin**, so it can be undone. Emptying the Recycle Bin is a separate, explicitly confirmed step. Every removal or move is written to the cleanup history.
 
 ## Claude Haiku 5.5
 
@@ -85,8 +102,10 @@ Open **Settings › AI Assistant**, paste an Anthropic API key and **Save key**,
 * Model `claude-haiku-5-5` via `POST https://api.anthropic.com/v1/messages` (`x-api-key`, `anthropic-version: 2023-06-01`) with plain `HttpClient`.
 * Errors are reported separately for authentication (401), billing/credits (402 or low balance), permissions (403), model access (404), rate limits (429, retried using `retry-after`), overload (529), server errors, timeouts and network failures. When Claude can't be reached the assistant falls back to an offline answer.
 * **Consent first:** before the first Claude request the assistant asks to share scan details (or set it in Settings). Without a key or consent, it answers offline from the scan.
-* **Only what's needed:** each question carries a compact scan summary (totals, the selected item, biggest folders and files, cleanup groups, recent growth). Claude explores further with six read-only tools — `list_folder`, `find_large_files`, `search_scan`, `get_item_details`, `plan_cleanup`, `compare_with_previous_scan`. File contents are never sent. File names are treated as data, never as instructions.
-* Answers cite items as `[[full path]]`, which become clickable links into the explorer; cleanup plans appear as numbered steps with risk badges and can be opened on the Cleanup page. Claude can't delete anything.
+* **Only what's needed:** each question carries a compact scan summary (totals, the selected item, biggest folders and files, cleanup groups, recent growth). Claude explores further with seven read-only tools — `list_folder`, `find_large_files`, `search_scan`, `get_item_details`, `plan_cleanup`, `compare_with_previous_scan`, `list_installed_apps`. File contents are never sent. File names are treated as data, never as instructions.
+* Answers **stream in** as Claude writes them (server-sent events, rebuilt into the same message the tool loop needs).
+* Answers cite items as `[[full path]]`, which become clickable links into the explorer; cleanup plans appear as numbered steps with risk badges, with **Clean these now…** (the usual confirmation, then the Recycle Bin) and a link to open the plan on the Cleanup page. Claude itself can't delete anything.
+* The conversation as shown is kept in `chat.json`, so it's still there after a restart (the last 100 messages; Clear removes it).
 
 ## Architecture
 
@@ -96,7 +115,7 @@ Two production projects with a one-way dependency, plus tests:
 |---|---|---|
 | `SpaceLens.Core` (class library, no WPF) | .NET, SQLite, Microsoft.Extensions.* | Domain model, scanning, risk rules, cleanup planning and execution, history, duplicates, DPAPI credentials, the Claude client and tool loop. Everything a test can run without a window. |
 | `SpaceLens` (WPF app) | `SpaceLens.Core`, CommunityToolkit.Mvvm | Views, view models, converters, controls, and the Windows-only adapters Core asks for (confirmation dialogs, folder picker, File Explorer and clipboard). |
-| `SpaceLens.Tests` (xUnit) | both | 133 tests: Core services against fakes and temp folders, plus view-model behaviour (consent, duplicate safety, plan selection, recycle targets). |
+| `SpaceLens.Tests` (xUnit) | both | 148 tests: Core services against fakes and temp folders, plus view-model behaviour (consent, duplicate safety, plan selection, recycle targets), streamed answers, never-touch folders and the map layout. |
 
 Rules the code follows:
 
@@ -115,6 +134,9 @@ Directory.Build.props               shared compiler, analyzer and versioning set
 .editorconfig                       formatting and naming rules (checked during build)
 references/ui-reference.png         design reference
 scripts/SmokeTest.ps1               UI Automation smoke test
+scripts/MakeIcon.ps1                makes Assets\SpaceLens.ico (exe and desktop icon) from the in-app logo
+run.cmd / package.cmd               start the newest build / make dist\SpaceLens.zip to send to someone
+packaging/                          what goes in the zip besides SpaceLens.exe (installer script, README)
 src/SpaceLens.Core/
   Configuration/                    AppPaths (%LOCALAPPDATA%\SpaceLens)
   DependencyInjection/              AddSpaceLensCore()
@@ -123,7 +145,11 @@ src/SpaceLens.Core/
   Repositories/                     SQLite scan history (versioned schema)
   Services/
     Scanning/                       DiskScanner, ParallelDirectoryWalker, DriveService, FileTypeClassifier, StorageAnalyzer
-    Cleanup/                        KnownLocations, CleanupCatalog, risk analyzer, analyzer, planner, executor, Recycle Bin
+    Cleanup/                        KnownLocations, CleanupCatalog, risk analyzer, analyzer, planner, executor, Recycle Bin, moves, cleanup log
+    Apps/                           installed programs (registry + UserAssist), uninstall command lines
+    SystemSpace/                    hibernation, page file, Windows.old, update downloads, WinSxS
+    Alerts/                         the daily low-space and growth check
+    Integration/                    right-click menu, shortcuts, Apps-list entry, scheduled task
     AI/                             Messages API client, Claude Haiku service + tool loop, context builder, tools, offline assistant
     Storage/                        history service (growth, comparisons)
     Duplicates/                     DuplicateFinder
@@ -133,11 +159,11 @@ src/SpaceLens.Core/
     Interaction/                    IConfirmationService (implemented by the app)
 src/SpaceLens/
   App.xaml(.cs)                     startup, resources, DI container, unhandled-error logging
-  Infrastructure/                   AddSpaceLensApp(), converters, startup switches, window capture
-  Services/                         dialogs, folder picker, shell (File Explorer, clipboard, Settings)
+  Infrastructure/                   AddSpaceLensApp(), converters, startup switches, window capture, installer, app icons
+  Services/                         dialogs, folder picker, alert card, shell (File Explorer, clipboard, Settings), saved chat
   ViewModels/                       one view model per page or panel; Messages/ for IMessenger messages
   Views/                            WPF views; code-behind only for view behaviour
-  Controls/                         RingGauge, ChatText (formatted answers with links)
+  Controls/                         RingGauge, ChatText (formatted answers with links), StorageMap + SquarifiedLayout (the map)
   Resources/                        colours, control styles, data views, icons
 tests/SpaceLens.Tests/              xUnit tests; Support/ holds fakes and factories
 archive/                            superseded Tauri scaffold and the previous WPF version
@@ -145,8 +171,8 @@ archive/                            superseded Tauri scaffold and the previous W
 
 ## Data on disk
 
-`%LOCALAPPDATA%\SpaceLens\` holds `scans.db` (folders of 1 MB+ and files of 100 MB+ per completed scan; 12 scans kept per location), `settings.json` (consent only) and the encrypted key. Scan history from the previous version used an incompatible schema and is reset on first start; a key saved by the previous version has to be entered again.
+`%LOCALAPPDATA%\SpaceLens\` holds `scans.db` (folders of 1 MB+ and files of 100 MB+ per completed scan; 12 scans kept per location), `settings.json` (consent, never-touch folders, alert thresholds), `cleanup-log.json` (the History page, last 500 actions), `chat.json` (the assistant conversation as shown) and the encrypted key. Installing adds `%LOCALAPPDATA%\Programs\SpaceLens\SpaceLens.exe`, two shortcuts and keys under `HKCU\Software` (right-click menu, Apps-list entry); the daily check is the scheduled task "SpaceLens daily check". Scan history from the previous version used an incompatible schema and is reset on first start; a key saved by the previous version has to be entered again.
 
 ## Limits
 
-Logical sizes, not allocated clusters. Hard links are counted once per name. Scans are not atomic snapshots of a changing disk. Folders Windows won't let you read are reported, not estimated. No installer or code signing.
+Logical sizes, not allocated clusters. Hard links are counted once per name. Scans are not atomic snapshots of a changing disk. Folders Windows won't let you read are reported, not estimated. Not code-signed. "Last used" for apps only covers programs started from Start, the taskbar or File Explorer. On Windows 11 the right-click entry is under Show more options.

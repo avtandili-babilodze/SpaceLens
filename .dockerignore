@@ -8,3 +8,5 @@ archive/
 references/
 scripts/
 *.user
+dist/
+packaging/

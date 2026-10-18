@@ -6,7 +6,10 @@ public enum AppPage
     Overview,
     Folders,
     Cleanup,
-    Compare,
+    Apps,
+    SystemSpace,
     Duplicates,
+    Compare,
+    History,
     Settings
 }

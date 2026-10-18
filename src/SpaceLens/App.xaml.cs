@@ -1,8 +1,11 @@
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SpaceLens.Core.Configuration;
+using SpaceLens.Core.Services.Alerts;
 using SpaceLens.Infrastructure;
 using SpaceLens.ViewModels;
 using SpaceLens.Views;
@@ -30,6 +33,28 @@ public partial class App : Application
         _logger = _services.GetRequiredService<ILogger<App>>();
         _logPath = _services.GetRequiredService<AppPaths>().LogPath;
 
+        // Modes without the main window: the scheduled daily check, and installing or uninstalling.
+        switch (e.Args.FirstOrDefault()?.ToLowerInvariant())
+        {
+            case "--check":
+                await RunDailyCheckAsync();
+                return;
+            case "--install":
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                if (_services.GetRequiredService<Installer>().Install())
+                {
+                    Start(Installer.InstalledPath, "--welcome");
+                }
+
+                Shutdown();
+                return;
+            case "--uninstall":
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                _services.GetRequiredService<Installer>().Uninstall();
+                Shutdown();
+                return;
+        }
+
         var window = _services.GetRequiredService<MainWindow>();
         var viewModel = _services.GetRequiredService<MainViewModel>();
         MainWindow = window;
@@ -37,6 +62,36 @@ public partial class App : Application
 
         await viewModel.InitializeAsync();
         await StartupOptions.Parse(e.Args).ApplyAsync(viewModel, window);
+    }
+
+    /// <summary>Starts another SpaceLens process, such as the freshly installed copy.</summary>
+    private static void Start(string path, string arguments = "") =>
+        Process.Start(new ProcessStartInfo(path, arguments) { UseShellExecute = false });
+
+    /// <summary>Runs from Task Scheduler: shows a card in the corner only when a drive needs attention, then exits.</summary>
+    private async Task RunDailyCheckAsync()
+    {
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        IReadOnlyList<DriveAlert> alerts;
+        try
+        {
+            alerts = await _services!.GetRequiredService<IDriveCheck>().RunAsync(CancellationToken.None);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            _logger?.LogError(exception, "The daily check failed");
+            alerts = [];
+        }
+
+        if (alerts.Count == 0)
+        {
+            Shutdown();
+            return;
+        }
+
+        var card = new AlertWindow(alerts, () => Start(Environment.ProcessPath!));
+        card.Closed += (_, _) => Shutdown();
+        card.Show();
     }
 
     protected override void OnExit(ExitEventArgs e)

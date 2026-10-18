@@ -72,7 +72,7 @@
             <Button Content="Compare" Style="{StaticResource Button.Primary}" Padding="18,8" Command="{Binding CompareCommand}" AutomationProperties.AutomationId="CompareScans" />
             <Button Margin="8,0,0,0" Padding="14,8" Command="{Binding AskAboutChangesCommand}" Visibility="{Binding HasComparison, Converter={StaticResource BoolToVisibility}}">
               <StackPanel Orientation="Horizontal">
-                <TextBlock Text="&#xE99A;" Style="{StaticResource Text.Glyph}" FontSize="14" />
+                <Path Data="{StaticResource SparkleGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center" />
                 <TextBlock Text="Ask AI to explain" Margin="8,0,0,0" />
               </StackPanel>
             </Button>

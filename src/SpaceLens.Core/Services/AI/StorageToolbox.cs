@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using SpaceLens.Core.Models;
+using SpaceLens.Core.Services.Apps;
 using SpaceLens.Core.Services.Cleanup;
 using SpaceLens.Core.Services.Scanning;
 using SpaceLens.Core.Services.Session;
@@ -8,10 +9,15 @@ using SpaceLens.Core.Services.Session;
 namespace SpaceLens.Core.Services.AI;
 
 /// <summary>
-/// Read-only tools that let Claude explore the current scan on demand. Results are capped in size, and
-/// every path must belong to the scan, so Claude only ever sees metadata the user's question needs.
+/// Read-only tools that let Claude explore the current scan and the installed apps on demand. Results are capped in
+/// size, and every path must belong to the scan, so Claude only ever sees metadata the user's question needs.
 /// </summary>
-public sealed class StorageToolbox(IScanSession session, ICleanupRiskAnalyzer riskAnalyzer, ICleanupPlanner planner) : IStorageToolbox
+public sealed class StorageToolbox(
+    IScanSession session,
+    ICleanupRiskAnalyzer riskAnalyzer,
+    ICleanupPlanner planner,
+    IInstalledAppsService apps,
+    TimeProvider clock) : IStorageToolbox
 {
     private const int DefaultLimit = 20;
     private const int MaxLimit = 50;
@@ -77,6 +83,16 @@ public sealed class StorageToolbox(IScanSession session, ICleanupRiskAnalyzer ri
             }
           },
           {
+            "name": "list_installed_apps",
+            "description": "List installed desktop programs, largest first, with size, install date, when each was last started from Start, the taskbar or File Explorer, and whether it can be uninstalled.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "limit": { "type": "integer", "description": "Maximum apps to return (default 20, max 50)." }
+              }
+            }
+          },
+          {
             "name": "compare_with_previous_scan",
             "description": "Show which folders grew or shrank and which large files appeared since the previous scan of the same location.",
             "input_schema": { "type": "object", "properties": {} }
@@ -94,11 +110,17 @@ public sealed class StorageToolbox(IScanSession session, ICleanupRiskAnalyzer ri
         "get_item_details" => $"Checking {NameOf(Text(input, "path"))}",
         "plan_cleanup" => $"Planning how to free {Number(input, "goal_gb", 0):0.#} GB",
         "compare_with_previous_scan" => "Comparing with your previous scan",
+        "list_installed_apps" => "Looking at your installed apps",
         _ => "Working"
     };
 
     public async Task<ToolResult> ExecuteAsync(string toolName, JsonObject input, CancellationToken cancellationToken)
     {
+        if (toolName == "list_installed_apps")
+        {
+            return await ListAppsAsync(input, cancellationToken);
+        }
+
         if (session.Current is null)
         {
             return Error("No scan is loaded yet.");
@@ -244,6 +266,32 @@ public sealed class StorageToolbox(IScanSession session, ICleanupRiskAnalyzer ri
             Shrank = growth.Shrank.Take(8).Select(c => new { c.Path, Change = ByteSize.FormatDelta(c.Delta) }).ToList(),
             NewLargeFiles = growth.NewLargeFiles.Select(f => new { f.Path, Size = AiContextBuilder.Size(f.AfterBytes), f.IsNew }).ToList(),
             Note = "Folders under 1 MB and files under 100 MB are not recorded in history."
+        });
+    }
+
+    private async Task<ToolResult> ListAppsAsync(JsonObject input, CancellationToken cancellationToken)
+    {
+        var installed = await Task.Run(apps.GetInstalledApps, cancellationToken);
+        var scan = session.Current;
+        var sized = scan is null
+            ? installed.Select(app => (App: app, Bytes: app.SizeBytes ?? 0)).ToList()
+            : await session.ReadAsync(s => installed.Select(app => (App: app, Bytes: AppSize.Best(app, s))).ToList(), cancellationToken);
+        var now = clock.GetUtcNow().UtcDateTime;
+        return Json(new
+        {
+            Count = sized.Count,
+            Apps = sized.OrderByDescending(a => a.Bytes).Take(Limit(input)).Select(a => new
+            {
+                a.App.Name,
+                a.App.Publisher,
+                Size = a.Bytes > 0 ? AiContextBuilder.Size(a.Bytes) : "unknown",
+                Installed = a.App.InstalledOn?.ToString("yyyy-MM-dd"),
+                LastUsed = a.App.LastUsedUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "not recorded",
+                DaysSinceUsed = a.App.LastUsedUtc is { } used ? (int?)(now - used).TotalDays : null,
+                a.App.CanUninstall
+            }).ToList(),
+            Note = "Last used is only recorded for programs started from Start, the taskbar or File Explorer; "
+                + "an app started by a launcher or a game client may show as not recorded although it's used."
         });
     }
 

@@ -15,7 +15,7 @@
         <StackPanel>
           <Grid>
             <StackPanel Orientation="Horizontal">
-              <TextBlock Text="&#xE99A;" Style="{StaticResource Text.Glyph}" FontSize="22" Foreground="{StaticResource AccentBrush}" />
+              <Path Data="{StaticResource SparkleGeometry}" Fill="{StaticResource AccentBrush}" Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center" />
               <StackPanel Margin="12,0,0,0">
                 <TextBlock Text="AI Assistant" Style="{StaticResource Text.Section}" FontSize="17" />
                 <TextBlock Style="{StaticResource Text.Caption}">
@@ -99,6 +99,88 @@
         </StackPanel>
       </Border>
 
+      <!-- Never-touch folders -->
+      <Border Style="{StaticResource Card}" Padding="24,20" Margin="0,14,0,0">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="&#xE72E;" Style="{StaticResource Text.Glyph}" FontSize="20" Foreground="{StaticResource AccentBrush}" />
+            <TextBlock Text="Never-touch folders" Style="{StaticResource Text.Section}" FontSize="17" Margin="12,0,0,0" />
+          </StackPanel>
+          <TextBlock Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,8,0,0" LineHeight="19"
+                     Text="SpaceLens never suggests anything in these folders for cleanup, and won't move or recycle it. You can also right-click an item in Folders › Never suggest for cleanup." />
+          <ItemsControl ItemsSource="{Binding ExcludedFolders}" Margin="0,12,0,0" AutomationProperties.AutomationId="ExcludedFolders">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Padding="12,6" Margin="0,0,0,6" CornerRadius="8" Background="{StaticResource InputBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                  <Grid>
+                    <TextBlock Text="{Binding}" FontFamily="Consolas" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,40,0" ToolTip="{Binding}" />
+                    <Button Content="&#xE711;" Style="{StaticResource Button.Icon}" Width="28" Height="28" FontSize="10" HorizontalAlignment="Right" ToolTip="Remove from the list"
+                            Command="{Binding DataContext.RemoveExcludedFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button HorizontalAlignment="Left" Margin="0,6,0,0" Padding="14,8" Command="{Binding AddExcludedFolderCommand}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE710;" Style="{StaticResource Text.Glyph}" FontSize="12" />
+              <TextBlock Text="Add folder…" Margin="8,0,0,0" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- Daily alerts -->
+      <Border Style="{StaticResource Card}" Padding="24,20" Margin="0,14,0,0">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="&#xEA8F;" Style="{StaticResource Text.Glyph}" FontSize="20" Foreground="{StaticResource AccentBrush}" />
+            <TextBlock Text="Low-space alerts" Style="{StaticResource Text.Section}" FontSize="17" Margin="12,0,0,0" />
+          </StackPanel>
+          <CheckBox IsChecked="{Binding IsDailyCheckEnabled}" Margin="0,14,0,0" AutomationProperties.AutomationId="DailyCheck">
+            <TextBlock Text="Check my drives once a day and alert me" Foreground="{StaticResource TextBrush}" />
+          </CheckBox>
+          <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="28,4,0,0" LineHeight="17"
+                     Text="A Windows scheduled task starts SpaceLens in the background around noon (or soon after the PC starts). It only shows a card in the corner of the screen when something needs attention, and saves a scan of the system drive to history." />
+          <WrapPanel Margin="0,14,0,0">
+            <TextBlock Text="Alert when a drive has less than" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding LowSpaceChoices}" SelectedItem="{Binding LowSpacePercent}" Width="76" Margin="10,0" />
+            <TextBlock Text="% free, or the system drive grew by" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding GrowthChoices}" SelectedItem="{Binding GrowthAlertGb}" Width="76" Margin="10,0" />
+            <TextBlock Text="GB since the last check" VerticalAlignment="Center" />
+          </WrapPanel>
+          <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+            <Button Content="Check now" Padding="14,8" Command="{Binding CheckNowCommand}" AutomationProperties.AutomationId="CheckNow" />
+            <ProgressBar IsIndeterminate="True" Width="120" Height="2" Margin="14,0,0,0" VerticalAlignment="Center"
+                         Visibility="{Binding IsChecking, Converter={StaticResource BoolToVisibility}}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- This PC -->
+      <Border Style="{StaticResource Card}" Padding="24,20" Margin="0,14,0,0">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="&#xE770;" Style="{StaticResource Text.Glyph}" FontSize="20" Foreground="{StaticResource AccentBrush}" />
+            <TextBlock Text="SpaceLens on this PC" Style="{StaticResource Text.Section}" FontSize="17" Margin="12,0,0,0" />
+          </StackPanel>
+          <TextBlock Text="{Binding InstallStatus}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,8,0,0" LineHeight="19" />
+          <Button HorizontalAlignment="Left" Style="{StaticResource Button.Primary}" Margin="0,12,0,0" Padding="16,8" Command="{Binding InstallCommand}"
+                  Visibility="{Binding CanInstall, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE896;" Style="{StaticResource Text.Glyph}" FontSize="13" />
+              <TextBlock Text="Install SpaceLens on this PC" Margin="8,0,0,0" />
+            </StackPanel>
+          </Button>
+          <CheckBox IsChecked="{Binding IsContextMenuEnabled}" Margin="0,16,0,0" AutomationProperties.AutomationId="ContextMenu">
+            <TextBlock Text="Add &#x201C;Analyze with SpaceLens&#x201D; when I right-click a folder or drive in File Explorer" Foreground="{StaticResource TextBrush}" TextWrapping="Wrap" />
+          </CheckBox>
+          <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="28,4,0,0"
+                     Text="On Windows 11 it's under Show more options. Only your Windows account is changed." />
+        </StackPanel>
+      </Border>
+
       <!-- Local data -->
       <Border Style="{StaticResource Card}" Padding="24,20" Margin="0,14,0,0">
         <StackPanel>
@@ -108,7 +190,7 @@
           <TextBlock Text="{Binding DataFolder}" FontFamily="Consolas" Margin="0,8,0,0" />
           <Button Content="Delete scan history…" HorizontalAlignment="Left" Margin="0,14,0,0" Padding="14,8" Command="{Binding ClearHistoryCommand}" />
           <TextBlock Style="{StaticResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,16,0,0" LineHeight="17"
-                     Text="Sizes are logical file sizes measured by the scan, in binary units like File Explorer (1 GB = 1,073,741,824 bytes). Drive usage comes from Windows and also counts system files, folders you can't read and file-system overhead. SpaceLens only ever moves items to the Recycle Bin, after you confirm." />
+                     Text="Sizes are logical file sizes measured by the scan, in binary units like File Explorer (1 GB = 1,073,741,824 bytes). Drive usage comes from Windows and also counts system files, folders you can't read and file-system overhead. SpaceLens only ever moves items to the Recycle Bin or to another drive, after you confirm." />
         </StackPanel>
       </Border>
     </StackPanel>

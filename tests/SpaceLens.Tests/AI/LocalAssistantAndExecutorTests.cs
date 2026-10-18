@@ -11,7 +11,7 @@ public sealed class LocalAssistantAndExecutorTests
     public async Task OfflineAssistantAnswersSpaceGoalsWithAPlan()
     {
         var session = await TestServices.LoadedSessionAsync();
-        var assistant = new LocalStorageAssistant(session, TestData.RiskAnalyzer, new CleanupPlanner());
+        var assistant = new LocalStorageAssistant(session, TestData.RiskAnalyzer, new CleanupPlanner(), new NoInstalledApps(), TestData.Clock);
 
         var reply = await assistant.AskAsync("Help me free 3 GB", null, CancellationToken.None);
 
@@ -23,7 +23,7 @@ public sealed class LocalAssistantAndExecutorTests
     public async Task OfflineAssistantExplainsTheRiskOfTheSelectedItem()
     {
         var session = await TestServices.LoadedSessionAsync();
-        var assistant = new LocalStorageAssistant(session, TestData.RiskAnalyzer, new CleanupPlanner());
+        var assistant = new LocalStorageAssistant(session, TestData.RiskAnalyzer, new CleanupPlanner(), new NoInstalledApps(), TestData.Clock);
         var vhdx = session.Current!.Root.Find(@"C:\Users\alex\Documents\vm\disk.vhdx");
 
         var reply = await assistant.AskAsync("Can I safely delete this?", vhdx, CancellationToken.None);
@@ -36,7 +36,7 @@ public sealed class LocalAssistantAndExecutorTests
     public async Task OfflineAssistantSaysWhenThereIsNoHistoryToCompare()
     {
         var session = await TestServices.LoadedSessionAsync();
-        var assistant = new LocalStorageAssistant(session, TestData.RiskAnalyzer, new CleanupPlanner());
+        var assistant = new LocalStorageAssistant(session, TestData.RiskAnalyzer, new CleanupPlanner(), new NoInstalledApps(), TestData.Clock);
 
         var reply = await assistant.AskAsync("Which folders are growing?", null, CancellationToken.None);
 

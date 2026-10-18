@@ -22,6 +22,12 @@ public sealed class AppPaths
 
     public string SettingsPath => Path.Join(Root, "settings.json");
 
+    /// <summary>What SpaceLens removed or moved, for the History page.</summary>
+    public string CleanupLogPath => Path.Join(Root, "cleanup-log.json");
+
+    /// <summary>The assistant conversation as shown, so it survives a restart.</summary>
+    public string ChatPath => Path.Join(Root, "chat.json");
+
     /// <summary>Warnings and errors, including unexpected crashes. Never contains the API key.</summary>
     public string LogPath => Path.Join(Root, "logs", "spacelens.log");
 }

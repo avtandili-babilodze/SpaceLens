@@ -15,4 +15,7 @@ public interface IShellService
     void OpenStorageSettings();
 
     void OpenUrl(string url);
+
+    /// <summary>Starts a program; with <paramref name="elevated"/> Windows asks for administrator rights first.</summary>
+    void Run(string fileName, string arguments = "", bool elevated = false);
 }

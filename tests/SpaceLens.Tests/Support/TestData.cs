@@ -36,7 +36,7 @@ public static class TestData
 
     public static CleanupCatalog Catalog { get; } = new(Locations);
 
-    public static CleanupRiskAnalyzer RiskAnalyzer { get; } = new(Catalog, Clock);
+    public static CleanupRiskAnalyzer RiskAnalyzer { get; } = new(Catalog, Clock, new MemorySettingsStore());
 
     /// <summary>
     /// Builds the folder chain for <paramref name="folderPath"/> under <paramref name="root"/> and returns the last folder.

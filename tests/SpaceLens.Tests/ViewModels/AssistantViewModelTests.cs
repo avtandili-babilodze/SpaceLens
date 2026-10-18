@@ -59,7 +59,8 @@ public sealed class AssistantViewModelTests
     {
         IScanSession session = await TestServices.LoadedSessionAsync();
         var claude = TestServices.Claude(session, _api, credentials, settings);
-        var local = new LocalStorageAssistant(session, TestData.RiskAnalyzer, new CleanupPlanner());
-        return new AssistantViewModel(claude, local, credentials, settings, session, new StrongReferenceMessenger());
+        var local = new LocalStorageAssistant(session, TestData.RiskAnalyzer, new CleanupPlanner(), new NoInstalledApps(), TestData.Clock);
+        var executor = TestServices.Executor(session, new FakeRecycleBin(), new ScriptedDialogs(answer: true));
+        return new AssistantViewModel(claude, local, credentials, settings, session, executor, new NoChatHistory(), new StrongReferenceMessenger());
     }
 }

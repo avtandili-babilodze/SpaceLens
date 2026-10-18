@@ -57,7 +57,8 @@ public sealed class ExplorerViewModelTests
     {
         var session = TestServices.Session();
         var executor = TestServices.Executor(session, _bin, new ScriptedDialogs(answer: true));
-        var explorer = new ExplorerViewModel(session, TestServices.Presenter, new NoShell(), executor, new StrongReferenceMessenger());
+        var explorer = new ExplorerViewModel(
+            session, TestServices.Presenter, new NoShell(), executor, new NoFolderPicker(), new MemorySettingsStore(), new StrongReferenceMessenger());
         return (session, explorer);
     }
 }

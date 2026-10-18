@@ -1,22 +1,32 @@
 @echo off
-rem Starts SpaceLens. Builds it first when it hasn't been built yet, with the .NET 9 SDK
-rem or, if that isn't installed, with Docker.
+rem Starts the newest SpaceLens: builds it first when it hasn't been built yet or the source
+rem changed since the last build, with the .NET 9 SDK or, if that isn't installed, with Docker.
 rem
 rem   run.cmd              start SpaceLens (build only if needed)
-rem   run.cmd --rebuild    build again from the current source, then start
+rem   run.cmd --rebuild    build again even if nothing changed, then start
 rem   run.cmd --scan C:\   any other options are passed to SpaceLens
 
 setlocal
 cd /d "%~dp0"
 set "OUT=artifacts\publish\win-x64"
 set "EXE=%OUT%\SpaceLens.exe"
+rem Touched after every successful build; a source file newer than this means the build is out of date.
+set "STAMP=artifacts\publish\last-build.stamp"
 set "ARGS=%*"
 
 if /i "%~1"=="--rebuild" (
     set "ARGS="
     goto build
 )
-if exist "%EXE%" goto run
+if not exist "%EXE%" goto build
+if not exist "%STAMP%" goto build
+powershell -NoProfile -Command ^
+    "$built = (Get-Item '%STAMP%').LastWriteTime;" ^
+    "$changed = Get-ChildItem src, Directory.Build.props, global.json -Recurse -File |" ^
+    "    Where-Object { $_.FullName -notmatch '\\(bin|obj)\\' -and $_.LastWriteTime -gt $built } | Select-Object -First 1;" ^
+    "exit [int][bool]$changed"
+if not errorlevel 1 goto run
+echo The source changed since the last build.
 
 :build
 tasklist /fi "imagename eq SpaceLens.exe" 2>nul | find /i "SpaceLens.exe" >nul
@@ -42,13 +52,15 @@ dotnet publish src\SpaceLens\SpaceLens.csproj -c Release -r win-x64 --self-conta
     -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true ^
     -o "%OUT%" -nologo -v q
 if errorlevel 1 goto failed
-goto run
+goto built
 
 :build_docker
 echo Building SpaceLens in Docker (first time downloads the .NET SDK image, a few minutes)...
 docker build --output "%OUT%" .
 if errorlevel 1 goto failed
-goto run
+
+:built
+type nul > "%STAMP%"
 
 :run
 if not exist "%EXE%" (

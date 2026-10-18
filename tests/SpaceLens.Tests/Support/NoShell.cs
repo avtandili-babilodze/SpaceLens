@@ -20,4 +20,8 @@ public sealed class NoShell : IShellService
     public void OpenUrl(string url)
     {
     }
+
+    public void Run(string fileName, string arguments = "", bool elevated = false)
+    {
+    }
 }

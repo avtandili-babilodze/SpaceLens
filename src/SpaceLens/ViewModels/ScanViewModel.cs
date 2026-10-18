@@ -147,7 +147,7 @@ public sealed partial class ScanViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanScanFolder))]
     private async Task ScanFolderAsync()
     {
-        var folder = _folderPicker.PickFolder();
+        var folder = _folderPicker.PickFolder("Choose a folder to scan");
         if (folder is not null)
         {
             await ScanPathAsync(folder, CancellationToken.None);

@@ -130,6 +130,10 @@ try {
     }
 
     Step 'Window resizes without errors' {
+        # SpaceLens opens full screen; its restore button gives back a normal, resizable window.
+        $byName = New-Object System.Windows.Automation.PropertyCondition ([System.Windows.Automation.AutomationElement]::NameProperty), 'Maximize'
+        $script:Window.FindFirst($Scope::Descendants, $byName).GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep -Milliseconds 800
         $transform = $script:Window.GetCurrentPattern([System.Windows.Automation.TransformPattern]::Pattern)
         $transform.Resize(1180, 760); Start-Sleep -Milliseconds 600
         $transform.Resize(1600, 940); Start-Sleep -Milliseconds 600

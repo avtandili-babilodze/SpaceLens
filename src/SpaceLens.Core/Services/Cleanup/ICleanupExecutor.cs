@@ -9,4 +9,10 @@ public interface ICleanupExecutor
 
     /// <summary>Confirms with the user, then permanently empties the Recycle Bin of the scanned drive.</summary>
     Task<bool> EmptyRecycleBinAsync(long knownBytes);
+
+    /// <summary>
+    /// Confirms with the user, then moves the items to a folder on another drive (freeing their space on this one)
+    /// and updates the scan.
+    /// </summary>
+    Task<MoveOutcome> MoveAsync(IReadOnlyList<StorageNode> items, string destinationFolder);
 }

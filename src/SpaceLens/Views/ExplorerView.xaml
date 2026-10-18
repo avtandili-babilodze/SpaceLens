@@ -3,9 +3,53 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:SpaceLens.Controls"
              xmlns:vm="clr-namespace:SpaceLens.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:ExplorerViewModel}">
+  <UserControl.Resources>
+    <!-- Actions on the selected item, shared by the list and the map (one menu instance each) -->
+    <ContextMenu x:Key="ItemMenu" x:Shared="False">
+      <MenuItem Header="Open" Command="{Binding OpenCommand}" CommandParameter="{Binding Table.Selected}">
+        <MenuItem.Icon>
+          <TextBlock Text="&#xE838;" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <MenuItem Header="Reveal in File Explorer" Command="{Binding RevealCommand}" CommandParameter="{Binding Table.Selected}">
+        <MenuItem.Icon>
+          <TextBlock Text="&#xE8A7;" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" CommandParameter="{Binding Table.Selected}">
+        <MenuItem.Icon>
+          <TextBlock Text="&#xE8C8;" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <MenuItem Header="Ask AI about this" Command="{Binding AskAboutCommand}" CommandParameter="{Binding Table.Selected}">
+        <MenuItem.Icon>
+          <Path Data="{StaticResource SparkleGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=MenuItem}}" Width="14" Height="14" Stretch="Uniform" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <Separator />
+      <MenuItem Header="Move to another drive…" Command="{Binding MoveCommand}" CommandParameter="{Binding Table.Selected}">
+        <MenuItem.Icon>
+          <TextBlock Text="&#xE8DE;" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <MenuItem Header="Never suggest for cleanup" Command="{Binding NeverCleanCommand}" CommandParameter="{Binding Table.Selected}">
+        <MenuItem.Icon>
+          <TextBlock Text="&#xE72E;" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <Separator />
+      <MenuItem Header="Move to Recycle Bin…" Command="{Binding RecycleCommand}" CommandParameter="{Binding Table.Selected}">
+        <MenuItem.Icon>
+          <TextBlock Text="&#xE74D;" />
+        </MenuItem.Icon>
+      </MenuItem>
+    </ContextMenu>
+  </UserControl.Resources>
+
   <Grid>
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="0.37*" MinWidth="210" MaxWidth="440" />
@@ -120,6 +164,25 @@
           </StackPanel>
 
           <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <!-- List or map -->
+            <Border Style="{StaticResource SegmentHost}" Margin="0,0,8,0" Visibility="{Binding IsFolderMode, Converter={StaticResource BoolToVisibility}}">
+              <StackPanel Orientation="Horizontal">
+                <RadioButton Style="{StaticResource Segment}" GroupName="ExplorerView" Padding="10,5" IsChecked="{Binding ShowList}"
+                             ToolTip="Show as a list" AutomationProperties.AutomationId="ShowList">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE8FD;" Style="{StaticResource Text.Glyph}" FontSize="13" />
+                    <TextBlock Text="List" Margin="6,0,0,0" />
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton Style="{StaticResource Segment}" GroupName="ExplorerView" Padding="10,5" IsChecked="{Binding ShowMap}"
+                             ToolTip="Show as a map: each tile's size is the space it uses" AutomationProperties.AutomationId="ShowMap">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xECA5;" Style="{StaticResource Text.Glyph}" FontSize="13" />
+                    <TextBlock Text="Map" Margin="6,0,0,0" />
+                  </StackPanel>
+                </RadioButton>
+              </StackPanel>
+            </Border>
             <ComboBox ItemsSource="{Binding Table.Filters}"
                       SelectedItem="{Binding Table.Filter}"
                       DisplayMemberPath="Label"
@@ -132,6 +195,7 @@
                 <ContextMenu>
                   <MenuItem Header="Show the largest files in this folder" Command="{Binding ShowLargestFilesCommand}" />
                   <MenuItem Header="Ask AI about this folder" Command="{Binding AskAboutCommand}" />
+                  <MenuItem Header="Never suggest this folder for cleanup" Command="{Binding NeverCleanCommand}" />
                   <Separator />
                   <MenuItem Header="Reveal in File Explorer" Command="{Binding RevealCommand}" />
                   <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" />
@@ -148,6 +212,12 @@
             <TextBlock Text="{Binding Table.CheckedText}" VerticalAlignment="Center" FontWeight="SemiBold" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
               <Button Content="Clear" Style="{StaticResource Button.Ghost}" Command="{Binding Table.ClearChecksCommand}" />
+              <Button Margin="8,0,0,0" Padding="14,6" Command="{Binding MoveCheckedCommand}" ToolTip="Move to a folder on another drive" AutomationProperties.AutomationId="MoveSelected">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="&#xE8DE;" Style="{StaticResource Text.Glyph}" FontSize="13" />
+                  <TextBlock Text="Move to another drive…" Margin="8,0,0,0" />
+                </StackPanel>
+              </Button>
               <Button Style="{StaticResource Button.Primary}" Margin="8,0,0,0" Padding="14,6" Command="{Binding RecycleCheckedCommand}" AutomationProperties.AutomationId="RecycleSelected">
                 <StackPanel Orientation="Horizontal">
                   <TextBlock Text="&#xE74D;" Style="{StaticResource Text.Glyph}" FontSize="13" />
@@ -167,37 +237,9 @@
                   MouseDoubleClick="OnRowDoubleClick"
                   PreviewMouseRightButtonDown="OnRowRightClick"
                   SizeChanged="OnGridSizeChanged"
+                  ContextMenu="{StaticResource ItemMenu}"
+                  Visibility="{Binding IsMapVisible, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"
                   AutomationProperties.AutomationId="ItemsGrid">
-          <DataGrid.ContextMenu>
-            <ContextMenu>
-              <MenuItem Header="Open" Command="{Binding OpenCommand}" CommandParameter="{Binding Table.Selected}">
-                <MenuItem.Icon>
-                  <TextBlock Text="&#xE838;" />
-                </MenuItem.Icon>
-              </MenuItem>
-              <MenuItem Header="Reveal in File Explorer" Command="{Binding RevealCommand}" CommandParameter="{Binding Table.Selected}">
-                <MenuItem.Icon>
-                  <TextBlock Text="&#xE8A7;" />
-                </MenuItem.Icon>
-              </MenuItem>
-              <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" CommandParameter="{Binding Table.Selected}">
-                <MenuItem.Icon>
-                  <TextBlock Text="&#xE8C8;" />
-                </MenuItem.Icon>
-              </MenuItem>
-              <MenuItem Header="Ask AI about this" Command="{Binding AskAboutCommand}" CommandParameter="{Binding Table.Selected}">
-                <MenuItem.Icon>
-                  <TextBlock Text="&#xE99A;" />
-                </MenuItem.Icon>
-              </MenuItem>
-              <Separator />
-              <MenuItem Header="Move to Recycle Bin…" Command="{Binding RecycleCommand}" CommandParameter="{Binding Table.Selected}">
-                <MenuItem.Icon>
-                  <TextBlock Text="&#xE74D;" />
-                </MenuItem.Icon>
-              </MenuItem>
-            </ContextMenu>
-          </DataGrid.ContextMenu>
           <DataGrid.Columns>
             <DataGridTemplateColumn Width="40" CanUserSort="False" CanUserResize="False">
               <DataGridTemplateColumn.Header>
@@ -291,6 +333,16 @@
           </DataGrid.Columns>
         </DataGrid>
 
+        <controls:StorageMap Grid.Row="2"
+                             Margin="12,2,12,10"
+                             Folder="{Binding CurrentFolder}"
+                             SelectedNode="{Binding SelectedNode, Mode=OneWay}"
+                             SelectCommand="{Binding SelectOnMapCommand}"
+                             OpenCommand="{Binding OpenOnMapCommand}"
+                             ContextMenu="{StaticResource ItemMenu}"
+                             Visibility="{Binding IsMapVisible, Converter={StaticResource BoolToVisibility}}"
+                             AutomationProperties.AutomationId="StorageMap" />
+
         <TextBlock Grid.Row="2" Text="Nothing to show here." Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
           <TextBlock.Visibility>
             <MultiBinding Converter="{StaticResource BoolPatternToVisibility}" ConverterParameter="True,False,False">
@@ -306,7 +358,7 @@
         <Border Grid.Row="3" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="18,9">
           <Grid>
             <TextBlock Text="{Binding ListCaption}" Style="{StaticResource Text.Tertiary}" AutomationProperties.AutomationId="ListCaption" />
-            <TextBlock Text="Sizes are logical file sizes  ·  double-click a folder to open it" Style="{StaticResource Text.Tertiary}" HorizontalAlignment="Right" />
+            <TextBlock Text="{Binding FooterHint}" Style="{StaticResource Text.Tertiary}" HorizontalAlignment="Right" />
           </Grid>
         </Border>
       </Grid>

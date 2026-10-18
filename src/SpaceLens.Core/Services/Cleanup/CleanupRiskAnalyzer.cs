@@ -1,5 +1,6 @@
 using SpaceLens.Core.Models;
 using SpaceLens.Core.Services.Scanning;
+using SpaceLens.Core.Services.Settings;
 
 namespace SpaceLens.Core.Services.Cleanup;
 
@@ -7,8 +8,11 @@ namespace SpaceLens.Core.Services.Cleanup;
 /// Rules are checked from most to least protective, so a cache inside Windows stays protected
 /// and nothing large is ever called safe just because of its size.
 /// </summary>
-public sealed class CleanupRiskAnalyzer(CleanupCatalog catalog, TimeProvider clock) : ICleanupRiskAnalyzer
+public sealed class CleanupRiskAnalyzer(CleanupCatalog catalog, TimeProvider clock, ISettingsStore settings) : ICleanupRiskAnalyzer
 {
+    private static readonly RiskAssessment Excluded = new(CleanupRisk.Protected,
+        "You asked SpaceLens never to suggest this folder for cleanup (Settings › Never-touch folders).");
+
     private static readonly RiskAssessment Link = new(CleanupRisk.Protected,
         "Link or junction. SpaceLens doesn't follow links, so its space is counted where the target lives.");
 
@@ -120,6 +124,11 @@ public sealed class CleanupRiskAnalyzer(CleanupCatalog catalog, TimeProvider clo
         if (node is FolderNode { IsLink: true })
         {
             return Link;
+        }
+
+        if (settings.Current.ExcludedFolders.Any(folder => PathRules.IsSameOrInside(path, folder)))
+        {
+            return Excluded;
         }
 
         var driveRoot = Path.GetPathRoot(path) ?? "";

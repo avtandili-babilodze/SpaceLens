@@ -8,6 +8,7 @@ namespace SpaceLens.Core.Services.AI;
 /// <summary>
 /// Claude Haiku 5.5 through the Messages API, with a tool-use loop over <see cref="IStorageToolbox"/>.
 /// Each question carries a compact scan summary; Claude fetches anything else it needs with tools.
+/// Answers stream in when the caller wants to show them as they're written.
 /// </summary>
 public sealed class ClaudeHaikuService(
     IAnthropicMessagesClient client,
@@ -40,6 +41,7 @@ public sealed class ClaudeHaikuService(
         string question,
         StorageNode? focus,
         IProgress<string>? activity,
+        IProgress<string>? answer,
         CancellationToken cancellationToken)
     {
         var context = await contextBuilder.BuildAsync(focus, cancellationToken);
@@ -51,7 +53,10 @@ public sealed class ClaudeHaikuService(
             CleanupPlan? plan = null;
             for (var round = 0; round < MaxToolRounds; round++)
             {
-                var response = await client.CreateMessageAsync(BuildRequest(conversation), cancellationToken);
+                var request = BuildRequest(conversation);
+                var response = answer is null
+                    ? await client.CreateMessageAsync(request, cancellationToken)
+                    : await client.StreamMessageAsync(request, answer.Report, cancellationToken);
                 var content = response["content"] as JsonArray
                     ?? throw new AiServiceException(AiErrorKind.Unexpected, "Claude's answer was missing its content. Try again.");
 

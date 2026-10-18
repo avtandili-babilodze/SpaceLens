@@ -11,10 +11,12 @@ internal static class NativeMethods
 {
     public const int FindExInfoBasic = 1;
     public const int FindExSearchNameMatch = 0;
+    public const uint FoMove = 0x0001;
     public const uint FoDelete = 0x0003;
     public const ushort FofSilent = 0x0004;
     public const ushort FofNoConfirmation = 0x0010;
     public const ushort FofAllowUndo = 0x0040;
+    public const ushort FofNoConfirmMkdir = 0x0200;
     public const ushort FofNoErrorUi = 0x0400;
     public const ushort FofWantNukeWarning = 0x4000;
     public const uint SherbNoConfirmation = 0x1;

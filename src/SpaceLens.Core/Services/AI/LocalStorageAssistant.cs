@@ -1,5 +1,6 @@
 using System.Text;
 using SpaceLens.Core.Models;
+using SpaceLens.Core.Services.Apps;
 using SpaceLens.Core.Services.Cleanup;
 using SpaceLens.Core.Services.Scanning;
 using SpaceLens.Core.Services.Session;
@@ -8,13 +9,19 @@ namespace SpaceLens.Core.Services.AI;
 
 /// <summary>
 /// Answers common questions from the scan without any network access. It recognises a handful of intents
-/// (free X GB, what's largest, is this safe, what grew) and replies with facts computed on the PC.
+/// (free X GB, what's largest, is this safe, what grew, which apps) and replies with facts computed on the PC.
 /// </summary>
 public sealed class LocalStorageAssistant(
     IScanSession session,
     ICleanupRiskAnalyzer riskAnalyzer,
-    ICleanupPlanner planner) : ILocalStorageAssistant
+    ICleanupPlanner planner,
+    IInstalledAppsService apps,
+    TimeProvider clock) : ILocalStorageAssistant
 {
+    private const int AppsListed = 8;
+    private static readonly TimeSpan UnusedAfter = TimeSpan.FromDays(180);
+    private static readonly string[] AppWords = [" apps", " app ", "program", "uninstall", "software"];
+
     private static readonly string[] GoalWords = ["free", "clean", "recover", "make room", "reclaim", "need"];
     private static readonly string[] GrowthWords = ["grow", "grew", "since", "changed", "increase", "bigger"];
     private static readonly string[] SafetyWords = ["safe", "delete", "remove", "get rid"];
@@ -47,6 +54,11 @@ public sealed class LocalStorageAssistant(
             return Task.FromResult(PlanFor(goal));
         }
 
+        if (ContainsAny(" " + text + " ", AppWords))
+        {
+            return session.ReadAsync(DescribeApps, cancellationToken);
+        }
+
         if (ContainsAny(text, GrowthWords))
         {
             return Task.FromResult(DescribeGrowth());
@@ -75,6 +87,34 @@ public sealed class LocalStorageAssistant(
             ? plan.Summary
             : $"Here {DescribeWays(plan.Steps.Count)} to free about {ByteSize.Format(plan.PlannedBytes)}. {plan.Summary}";
         return new AiReply(intro, plan);
+    }
+
+    private AiReply DescribeApps(ScanResult scan)
+    {
+        var now = clock.GetUtcNow().UtcDateTime;
+        var sized = apps.GetInstalledApps()
+            .Select(app => (App: app, Bytes: AppSize.Best(app, scan)))
+            .OrderByDescending(a => a.Bytes)
+            .ToList();
+        if (sized.Count == 0)
+        {
+            return new AiReply("I couldn't read the list of installed apps on this PC.");
+        }
+
+        var unused = sized.Where(a => a.App.LastUsedUtc is { } used && now - used > UnusedAfter).ToList();
+        var text = new StringBuilder();
+        text.AppendLine($"You have {sized.Count:N0} apps installed. The largest:");
+        foreach (var (app, bytes) in sized.Take(AppsListed))
+        {
+            var used = app.LastUsedUtc is { } last ? $"last used {last.ToLocalTime():MMM yyyy}" : "last use not recorded";
+            text.AppendLine($"- **{app.Name}**: {(bytes > 0 ? ByteSize.Format(bytes) : "size unknown")}, {used}");
+        }
+
+        text.Append(unused.Count > 0
+            ? $"{unused.Count:N0} apps haven't been started in 6 months ({ByteSize.Format(unused.Sum(a => a.Bytes))}); "
+                + "the Apps page lists them so you can uninstall the ones you don't need."
+            : "Open the Apps page to sort them by size or last use and uninstall the ones you don't need.");
+        return new AiReply(text.ToString());
     }
 
     private AiReply DescribeGrowth()

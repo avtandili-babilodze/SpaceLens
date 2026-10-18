@@ -30,7 +30,17 @@ public sealed partial class AnthropicMessagesClient(
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(10);
 
-    public async Task<JsonObject> CreateMessageAsync(JsonObject body, CancellationToken cancellationToken)
+    public Task<JsonObject> CreateMessageAsync(JsonObject body, CancellationToken cancellationToken) =>
+        SendAsync(body, onText: null, cancellationToken);
+
+    public Task<JsonObject> StreamMessageAsync(JsonObject body, Action<string> onText, CancellationToken cancellationToken)
+    {
+        var streamed = body.DeepClone().AsObject();
+        streamed["stream"] = true;
+        return SendAsync(streamed, onText, cancellationToken);
+    }
+
+    private async Task<JsonObject> SendAsync(JsonObject body, Action<string>? onText, CancellationToken cancellationToken)
     {
         var apiKey = await credentials.LoadApiKeyAsync(cancellationToken)
             ?? throw new AiServiceException(AiErrorKind.NotConfigured, NotConfiguredMessage);
@@ -40,7 +50,7 @@ public sealed partial class AnthropicMessagesClient(
         {
             try
             {
-                return await SendOnceAsync(json, apiKey, cancellationToken);
+                return await SendOnceAsync(json, apiKey, onText, cancellationToken);
             }
             catch (AiServiceException exception) when (CanRetry(exception, attempt) && RetryDelay(exception, attempt) is { } delay)
             {
@@ -83,7 +93,7 @@ public sealed partial class AnthropicMessagesClient(
         };
     }
 
-    private async Task<JsonObject> SendOnceAsync(string json, string apiKey, CancellationToken cancellationToken)
+    private async Task<JsonObject> SendOnceAsync(string json, string apiKey, Action<string>? onText, CancellationToken cancellationToken)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(RequestTimeout);
@@ -98,15 +108,20 @@ public sealed partial class AnthropicMessagesClient(
         try
         {
             using var http = httpClientFactory.CreateClient(HttpClientName);
-            using var response = await http.SendAsync(request, timeout.Token);
-            var responseBody = await response.Content.ReadAsStringAsync(timeout.Token);
+            using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogWarning("Anthropic returned HTTP {Status}", (int)response.StatusCode);
-                var error = MapError(response.StatusCode, responseBody);
+                var error = MapError(response.StatusCode, await response.Content.ReadAsStringAsync(timeout.Token));
                 throw new AiServiceException(error.Kind, error.Message) { RetryAfter = response.Headers.RetryAfter?.Delta };
             }
 
+            if (onText is not null && response.Content.Headers.ContentType?.MediaType == "text/event-stream")
+            {
+                return await ReadEventsAsync(response, onText, timeout.Token);
+            }
+
+            var responseBody = await response.Content.ReadAsStringAsync(timeout.Token);
             return JsonNode.Parse(responseBody) as JsonObject
                 ?? throw new AiServiceException(AiErrorKind.Unexpected, "Anthropic returned an empty response. Try again.");
         }
@@ -114,6 +129,12 @@ public sealed partial class AnthropicMessagesClient(
         {
             const string Message = "Couldn't reach Anthropic. Check your internet connection; "
                 + "everything else in SpaceLens works offline.";
+            throw new AiServiceException(AiErrorKind.Network, Message, exception);
+        }
+        catch (IOException exception)
+        {
+            // The connection dropped while an answer was streaming in.
+            const string Message = "The connection to Anthropic was interrupted. Check your internet connection and try again.";
             throw new AiServiceException(AiErrorKind.Network, Message, exception);
         }
         catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
@@ -125,6 +146,34 @@ public sealed partial class AnthropicMessagesClient(
             const string Message = "Anthropic returned a response SpaceLens couldn't read. Try again.";
             throw new AiServiceException(AiErrorKind.Unexpected, Message, exception);
         }
+    }
+
+    /// <summary>Reads server-sent events: "data:" lines make up an event, which ends at a blank line.</summary>
+    private static async Task<JsonObject> ReadEventsAsync(HttpResponseMessage response, Action<string> onText, CancellationToken cancellationToken)
+    {
+        var message = new StreamedMessage(onText);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        var data = new StringBuilder();
+        while (await reader.ReadLineAsync(cancellationToken) is { } line)
+        {
+            if (line.StartsWith("data:", StringComparison.Ordinal))
+            {
+                data.Append(line.AsSpan(5).TrimStart(' '));
+            }
+            else if (line.Length == 0 && data.Length > 0)
+            {
+                message.Apply(data.ToString());
+                data.Clear();
+            }
+        }
+
+        if (data.Length > 0)
+        {
+            message.Apply(data.ToString());
+        }
+
+        return message.Build();
     }
 
     /// <summary>Waits what Anthropic asked for (or 1 s, then 3 s); gives up when it asks for longer than a user would wait.</summary>

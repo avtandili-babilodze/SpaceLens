@@ -2,6 +2,8 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using SpaceLens.Core.Services.Session;
+using SpaceLens.Core.Services.Settings;
 using SpaceLens.ViewModels.Messages;
 
 namespace SpaceLens.ViewModels;
@@ -19,6 +21,8 @@ public sealed partial class MainViewModel : ObservableObject,
         ["why", "what", "how", "which", "can", "should", "is", "where", "help", "free", "find"];
 
     private readonly IMessenger _messenger;
+    private readonly IScanSession _session;
+    private IReadOnlyList<string> _excludedFolders;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(IsWorkspacePage), nameof(ShowSummaryCards), nameof(ShowDetails))]
@@ -29,6 +33,8 @@ public sealed partial class MainViewModel : ObservableObject,
 
     public MainViewModel(
         IMessenger messenger,
+        IScanSession session,
+        ISettingsStore settingsStore,
         ScanViewModel scan,
         NotificationViewModel notifications,
         DashboardViewModel dashboard,
@@ -38,9 +44,14 @@ public sealed partial class MainViewModel : ObservableObject,
         CleanupViewModel cleanup,
         CompareViewModel compare,
         DuplicatesViewModel duplicates,
+        AppsViewModel apps,
+        SystemSpaceViewModel systemSpace,
+        HistoryViewModel history,
         SettingsViewModel settings)
     {
         _messenger = messenger;
+        _session = session;
+        _excludedFolders = settingsStore.Current.ExcludedFolders;
         Scan = scan;
         Notifications = notifications;
         Dashboard = dashboard;
@@ -50,19 +61,26 @@ public sealed partial class MainViewModel : ObservableObject,
         Cleanup = cleanup;
         Compare = compare;
         Duplicates = duplicates;
+        Apps = apps;
+        SystemSpace = systemSpace;
+        History = history;
         Settings = settings;
 
         Navigation =
         [
-            new(AppPage.Overview, "Overview", ""),
-            new(AppPage.Folders, "Folders", ""),
-            new(AppPage.Cleanup, "Cleanup", ""),
-            new(AppPage.Compare, "Compare Scans", ""),
-            new(AppPage.Duplicates, "Duplicates", ""),
-            new(AppPage.Settings, "Settings", "")
+            new(AppPage.Overview, "Overview", "\uE80F"),
+            new(AppPage.Folders, "Folders", "\uE8B7"),
+            new(AppPage.Cleanup, "Cleanup", "\uEA99"),
+            new(AppPage.Apps, "Apps", "\uECAA"),
+            new(AppPage.SystemSpace, "System space", "\uE770"),
+            new(AppPage.Duplicates, "Duplicates", "\uE8C8"),
+            new(AppPage.Compare, "Compare Scans", "\uE9D2"),
+            new(AppPage.History, "History", "\uE81C"),
+            new(AppPage.Settings, "Settings", "\uE713")
         ];
         _selectedNavigation = Navigation[0];
 
+        settingsStore.Changed += (_, _) => OnSettingsChanged(settingsStore.Current.ExcludedFolders);
         scan.PropertyChanged += OnScanChanged;
         explorer.PropertyChanged += OnExplorerChanged;
         messenger.RegisterAll(this);
@@ -85,6 +103,12 @@ public sealed partial class MainViewModel : ObservableObject,
     public CompareViewModel Compare { get; }
 
     public DuplicatesViewModel Duplicates { get; }
+
+    public AppsViewModel Apps { get; }
+
+    public SystemSpaceViewModel SystemSpace { get; }
+
+    public HistoryViewModel History { get; }
 
     public SettingsViewModel Settings { get; }
 
@@ -149,12 +173,39 @@ public sealed partial class MainViewModel : ObservableObject,
         _messenger.Send(new AskAssistantMessage(question, Explorer.SelectedNode));
     }
 
+    /// <summary>Apps and System space measure when first opened, not at startup.</summary>
+    partial void OnSelectedNavigationChanged(NavigationItem value)
+    {
+        switch (value.Page)
+        {
+            case AppPage.Apps:
+                _ = Apps.EnsureLoadedAsync();
+                break;
+            case AppPage.SystemSpace:
+                _ = SystemSpace.EnsureLoadedAsync();
+                break;
+        }
+    }
+
     private void ShowWorkspace()
     {
         if (!IsWorkspacePage)
         {
             Navigate(AppPage.Folders);
         }
+    }
+
+    /// <summary>A changed never-touch list changes cleanup risks: re-analyze the scan and relist what the explorer shows.</summary>
+    private void OnSettingsChanged(IReadOnlyList<string> excludedFolders)
+    {
+        if (excludedFolders.SequenceEqual(_excludedFolders, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _excludedFolders = excludedFolders;
+        Explorer.RefreshListing();
+        _ = _session.RefreshCleanupAsync();
     }
 
     private void OnScanChanged(object? sender, PropertyChangedEventArgs e)

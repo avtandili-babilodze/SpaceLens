@@ -22,7 +22,7 @@
           <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Border Width="34" Height="34" CornerRadius="9" Background="#1A2A40" VerticalAlignment="Top">
-          <Path Data="{StaticResource TrendGeometry}" Stroke="#B9C9DD" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Width="24" Height="24" Stretch="None" />
+          <Path Data="{StaticResource SparkleGeometry}" Fill="{StaticResource AccentHoverBrush}" Width="18" Height="18" Stretch="Uniform" />
         </Border>
         <StackPanel Grid.Column="1" Margin="12,0,0,0">
           <TextBlock controls:ChatText.Text="{Binding Text}"
@@ -59,6 +59,21 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+
+          <!-- Carry out the plan right here; the usual confirmation lists every item first -->
+          <Button Style="{StaticResource Button.Primary}"
+                  HorizontalAlignment="Left"
+                  Padding="14,7"
+                  Margin="0,10,0,2"
+                  Command="{Binding DataContext.CleanPlanCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                  CommandParameter="{Binding}"
+                  Visibility="{Binding CanClean, Converter={StaticResource BoolToVisibility}}"
+                  AutomationProperties.AutomationId="CleanPlanFromChat">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE74D;" Style="{StaticResource Text.Glyph}" FontSize="13" />
+              <TextBlock Text="Clean these now…" Margin="8,0,0,0" />
+            </StackPanel>
+          </Button>
 
           <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
             <TextBlock Text="{Binding SourceLabel}" Style="{StaticResource Text.Tertiary}" FontSize="11" VerticalAlignment="Center" />
@@ -102,8 +117,8 @@
     <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
-        <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
         <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
 
@@ -114,7 +129,7 @@
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <TextBlock Text="&#xE99A;" Style="{StaticResource Text.Glyph}" FontSize="22" Foreground="{StaticResource AccentBrush}" />
+        <Path Data="{StaticResource SparkleGeometry}" Fill="{StaticResource AccentBrush}" Width="22" Height="22" Stretch="Uniform" VerticalAlignment="Center" />
         <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
           <TextBlock Text="AI Storage Assistant" Style="{StaticResource Text.Section}" />
           <TextBlock Style="{StaticResource Text.Tertiary}" FontSize="11" TextTrimming="CharacterEllipsis">
@@ -130,41 +145,10 @@
         </StackPanel>
       </Grid>
 
-      <!-- Input -->
-      <Grid Grid.Row="1" Margin="0,12,0,0">
-        <TextBox x:Name="QuestionBox"
-                 Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}"
-                 Style="{StaticResource AskBox}"
-                 Tag="Ask about your storage…"
-                 AutomationProperties.AutomationId="AssistantInput">
-          <TextBox.InputBindings>
-            <KeyBinding Key="Enter" Command="{Binding SendCommand}" />
-          </TextBox.InputBindings>
-        </TextBox>
-        <Button HorizontalAlignment="Right" Margin="0,0,7,0" Width="34" Height="34" Padding="0"
-                Command="{Binding SendCommand}"
-                ToolTip="Send (Enter)"
-                AutomationProperties.AutomationId="SendQuestion">
-          <Button.Style>
-            <Style TargetType="Button" BasedOn="{StaticResource Button.Primary}">
-              <Setter Property="Template">
-                <Setter.Value>
-                  <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="17">
-                      <TextBlock Text="&#xE724;" Style="{StaticResource Text.Glyph}" FontSize="14" Foreground="White" HorizontalAlignment="Center" Margin="2,0,0,0" />
-                    </Border>
-                  </ControlTemplate>
-                </Setter.Value>
-              </Setter>
-            </Style>
-          </Button.Style>
-        </Button>
-      </Grid>
-
-      <!-- Conversation -->
-      <ScrollViewer x:Name="Conversation" Grid.Row="2" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+      <!-- Conversation, kept against the input like a chat: short histories sit at the bottom -->
+      <ScrollViewer x:Name="Conversation" Grid.Row="1" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                     Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}">
-        <StackPanel>
+        <StackPanel VerticalAlignment="Bottom">
           <!-- Suggestions before the first question -->
           <StackPanel Visibility="{Binding ShowSuggestions, Converter={StaticResource BoolToVisibility}}">
             <TextBlock Text="Ask anything about what's using space. Try:" Style="{StaticResource Text.Caption}" Margin="2,2,0,8" />
@@ -206,7 +190,7 @@
       </ScrollViewer>
 
       <!-- Working indicator -->
-      <Grid Grid.Row="3" Margin="0,8,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
+      <Grid Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
@@ -216,6 +200,37 @@
           <ProgressBar IsIndeterminate="True" Height="2" Margin="0,6,0,0" />
         </StackPanel>
         <Button Grid.Column="1" Content="Stop" Style="{StaticResource Button.Ghost}" Margin="10,0,0,0" Command="{Binding StopCommand}" />
+      </Grid>
+
+      <!-- Input -->
+      <Grid Grid.Row="3" Margin="0,10,0,0">
+        <TextBox x:Name="QuestionBox"
+                 Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}"
+                 Style="{StaticResource AskBox}"
+                 Tag="Ask about your storage…"
+                 AutomationProperties.AutomationId="AssistantInput">
+          <TextBox.InputBindings>
+            <KeyBinding Key="Enter" Command="{Binding SendCommand}" />
+          </TextBox.InputBindings>
+        </TextBox>
+        <Button HorizontalAlignment="Right" Margin="0,0,7,0" Width="34" Height="34" Padding="0"
+                Command="{Binding SendCommand}"
+                ToolTip="Send (Enter)"
+                AutomationProperties.AutomationId="SendQuestion">
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource Button.Primary}">
+              <Setter Property="Template">
+                <Setter.Value>
+                  <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="17">
+                      <TextBlock Text="&#xE724;" Style="{StaticResource Text.Glyph}" FontSize="14" Foreground="White" HorizontalAlignment="Center" Margin="2,0,0,0" />
+                    </Border>
+                  </ControlTemplate>
+                </Setter.Value>
+              </Setter>
+            </Style>
+          </Button.Style>
+        </Button>
       </Grid>
     </Grid>
   </Border>

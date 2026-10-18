@@ -5,16 +5,19 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using SpaceLens.Core.Models;
 using SpaceLens.Core.Services.AI;
+using SpaceLens.Core.Services.Cleanup;
 using SpaceLens.Core.Services.Security;
 using SpaceLens.Core.Services.Session;
 using SpaceLens.Core.Services.Settings;
+using SpaceLens.Services;
 using SpaceLens.ViewModels.Messages;
 
 namespace SpaceLens.ViewModels;
 
 /// <summary>
-/// The storage assistant. With an API key and the user's consent it asks Claude Haiku 5.5; otherwise
-/// (or when Claude can't be reached) it answers offline from the scan.
+/// The storage assistant. With an API key and the user's consent it asks Claude Haiku 5.5, showing the answer as it's
+/// written; otherwise (or when Claude can't be reached) it answers offline from the scan. A cleanup plan in an answer can
+/// be carried out right from the chat, and the conversation is kept between sessions.
 /// </summary>
 public sealed partial class AssistantViewModel : ObservableObject,
     IRecipient<AskAssistantMessage>,
@@ -28,6 +31,8 @@ public sealed partial class AssistantViewModel : ObservableObject,
     private readonly ICredentialStore _credentials;
     private readonly ISettingsStore _settings;
     private readonly IScanSession _session;
+    private readonly ICleanupExecutor _executor;
+    private readonly IChatHistory _history;
     private readonly IMessenger _messenger;
     private AiConversation _conversation = new();
     private CancellationTokenSource? _answerCancellation;
@@ -68,6 +73,8 @@ public sealed partial class AssistantViewModel : ObservableObject,
         ICredentialStore credentials,
         ISettingsStore settings,
         IScanSession session,
+        ICleanupExecutor executor,
+        IChatHistory history,
         IMessenger messenger)
     {
         _claude = claude;
@@ -75,8 +82,19 @@ public sealed partial class AssistantViewModel : ObservableObject,
         _credentials = credentials;
         _settings = settings;
         _session = session;
+        _executor = executor;
+        _history = history;
         _messenger = messenger;
-        Messages.CollectionChanged += (_, _) => OnPropertyChanged(nameof(ShowSuggestions));
+        foreach (var saved in history.Load())
+        {
+            Messages.Add(new ChatMessageViewModel(saved));
+        }
+
+        Messages.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(ShowSuggestions));
+            SaveHistory();
+        };
         settings.Changed += (_, _) => OnPropertyChanged(nameof(ModeLabel));
         session.ScanLoaded += (_, _) => OnScanLoaded();
         messenger.RegisterAll(this);
@@ -167,6 +185,7 @@ public sealed partial class AssistantViewModel : ObservableObject,
         _answerCancellation?.Cancel();
         _conversation = new AiConversation();
         Messages.Clear();
+        _history.Clear();
         NeedsConsent = false;
         _pendingQuestion = null;
     }
@@ -203,6 +222,51 @@ public sealed partial class AssistantViewModel : ObservableObject,
         if (message is { GoalBytes: > 0 })
         {
             _messenger.Send(new OpenCleanupPlanMessage(message.GoalBytes));
+        }
+    }
+
+    /// <summary>Carries out the plan in an answer: one confirmation for every item, then the Recycle Bin if it's part of the plan.</summary>
+    [RelayCommand]
+    private async Task CleanPlanAsync(ChatMessageViewModel? message)
+    {
+        if (message is not { CanClean: true, Plan: { } plan })
+        {
+            return;
+        }
+
+        try
+        {
+            var items = plan.Steps
+                .Where(s => s.Opportunity.Action == CleanupAction.RecycleItems)
+                .SelectMany(s => s.Items)
+                .ToList();
+            if (items.Count > 0)
+            {
+                var outcome = await _executor.RecycleAsync(items);
+                if (outcome.WasCancelled && outcome.RecycledCount == 0)
+                {
+                    return;
+                }
+
+                AddMessage(ChatRole.Notice, outcome.Describe());
+            }
+
+            var recycleBin = plan.Steps.FirstOrDefault(s => s.Opportunity.Action == CleanupAction.EmptyRecycleBin);
+            if (recycleBin is not null && await _executor.EmptyRecycleBinAsync(recycleBin.Bytes))
+            {
+                AddMessage(ChatRole.Notice, "The Recycle Bin was emptied.");
+            }
+
+            if (plan.Steps.Any(s => s.Opportunity.Action == CleanupAction.OpenStorageSettings))
+            {
+                AddMessage(ChatRole.Notice, "Windows update leftovers can only be removed by Windows: Settings › System › Storage › Temporary files.");
+            }
+
+            message.IsPlanClosed = true;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or PlatformNotSupportedException)
+        {
+            AddMessage(ChatRole.Error, exception.Message);
         }
     }
 
@@ -282,8 +346,55 @@ public sealed partial class AssistantViewModel : ObservableObject,
         }
 
         var activity = new Progress<string>(status => Activity = status + "…");
-        var reply = await _claude.AskAsync(_conversation, question, Focus, activity, token);
-        Messages.Add(new ChatMessageViewModel(ChatRole.Assistant, reply.Text, AnswerSource.Claude, reply.Plan));
+
+        // The answer shows up as a draft while it streams in and is replaced by the finished message (with its plan).
+        // Progress callbacks are posted, so one can arrive after the answer is done; the flag makes it a no-op.
+        ChatMessageViewModel? draft = null;
+        var finished = false;
+        var answer = new Progress<string>(text =>
+        {
+            if (finished)
+            {
+                return;
+            }
+
+            if (draft is null && text.Length > 0)
+            {
+                draft = new ChatMessageViewModel(ChatRole.Assistant, text, AnswerSource.Claude);
+                Messages.Add(draft);
+                Activity = "Writing…";
+            }
+            else if (draft is not null)
+            {
+                draft.Text = text;
+            }
+        });
+
+        try
+        {
+            var reply = await _claude.AskAsync(_conversation, question, Focus, activity, answer, token);
+            finished = true;
+            var message = new ChatMessageViewModel(ChatRole.Assistant, reply.Text, AnswerSource.Claude, reply.Plan);
+            var index = draft is null ? -1 : Messages.IndexOf(draft);
+            if (index >= 0)
+            {
+                Messages[index] = message;
+            }
+            else
+            {
+                Messages.Add(message);
+            }
+        }
+        catch
+        {
+            finished = true;
+            if (draft is not null)
+            {
+                Messages.Remove(draft);
+            }
+
+            throw;
+        }
     }
 
     private async Task AnswerLocallyAsync(string question, CancellationToken token)
@@ -308,6 +419,13 @@ public sealed partial class AssistantViewModel : ObservableObject,
         _answerCancellation?.Cancel();
         _conversation = new AiConversation();
         Focus = null;
+
+        // Plans point at items of the previous scan; they can still be reopened (and re-planned) on the Cleanup page.
+        foreach (var message in Messages)
+        {
+            message.IsPlanClosed = true;
+        }
+
         if (Messages.Count > 0)
         {
             AddMessage(ChatRole.Notice, "A new scan is loaded. Answers now use it.");
@@ -315,4 +433,7 @@ public sealed partial class AssistantViewModel : ObservableObject,
     }
 
     private void AddMessage(ChatRole role, string text) => Messages.Add(new ChatMessageViewModel(role, text));
+
+    private void SaveHistory() =>
+        _history.Save(Messages.Where(m => m.Text.Length > 0).Select(m => m.ToSaved()).ToList());
 }

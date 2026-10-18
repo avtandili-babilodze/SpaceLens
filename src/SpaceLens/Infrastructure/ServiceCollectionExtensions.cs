@@ -22,11 +22,14 @@ public static class ServiceCollectionExtensions
             .AddDebug());
         services.AddSingleton<ILoggerProvider>(provider => new FileLoggerProvider(provider.GetRequiredService<AppPaths>().LogPath));
 
-        // Windows integration. One dialog service answers both interfaces, so register it once.
+        // Windows integration. One dialog service answers several interfaces, so register it once.
         services.AddSingleton<DialogService>();
         services.AddSingleton<IConfirmationService>(provider => provider.GetRequiredService<DialogService>());
         services.AddSingleton<IFolderPicker>(provider => provider.GetRequiredService<DialogService>());
+        services.AddSingleton<IAlertPresenter>(provider => provider.GetRequiredService<DialogService>());
         services.AddSingleton<IShellService, ShellService>();
+        services.AddSingleton<IChatHistory, ChatHistoryStore>();
+        services.AddSingleton<Installer>();
         services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
 
         // View models: one instance each for the lifetime of the window
@@ -40,6 +43,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CleanupViewModel>();
         services.AddSingleton<CompareViewModel>();
         services.AddSingleton<DuplicatesViewModel>();
+        services.AddSingleton<AppsViewModel>();
+        services.AddSingleton<SystemSpaceViewModel>();
+        services.AddSingleton<HistoryViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -7,6 +8,7 @@ using SpaceLens.Core.Models;
 using SpaceLens.Core.Services.Cleanup;
 using SpaceLens.Core.Services.Scanning;
 using SpaceLens.Core.Services.Session;
+using SpaceLens.Core.Services.Settings;
 using SpaceLens.Services;
 using SpaceLens.ViewModels.Messages;
 
@@ -14,7 +16,7 @@ namespace SpaceLens.ViewModels;
 
 /// <summary>
 /// The explorer: navigation, breadcrumbs, search and actions on items. The folder tree and the item table
-/// are separate view models (<see cref="Tree"/> and <see cref="Table"/>).
+/// are separate view models (<see cref="Tree"/> and <see cref="Table"/>); a folder can also be shown as a map.
 /// </summary>
 public sealed partial class ExplorerViewModel : ObservableObject
 {
@@ -25,6 +27,8 @@ public sealed partial class ExplorerViewModel : ObservableObject
     private readonly IScanSession _session;
     private readonly IShellService _shell;
     private readonly ICleanupExecutor _executor;
+    private readonly IFolderPicker _folderPicker;
+    private readonly ISettingsStore _settings;
     private readonly IMessenger _messenger;
     private CancellationTokenSource? _searchCancellation;
     private bool _suppressSearch;
@@ -38,8 +42,13 @@ public sealed partial class ExplorerViewModel : ObservableObject
     private string _searchText = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsFolderMode), nameof(ListTitle))]
+    [NotifyPropertyChangedFor(nameof(IsFolderMode), nameof(ListTitle), nameof(IsMapVisible))]
     private ExplorerMode _mode;
+
+    /// <summary>Show the current folder as a map of tiles instead of a list.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMapVisible), nameof(ShowList), nameof(FooterHint))]
+    private bool _showMap;
 
     [ObservableProperty]
     private bool _isBusy;
@@ -52,11 +61,15 @@ public sealed partial class ExplorerViewModel : ObservableObject
         NodePresenter presenter,
         IShellService shell,
         ICleanupExecutor executor,
+        IFolderPicker folderPicker,
+        ISettingsStore settings,
         IMessenger messenger)
     {
         _session = session;
         _shell = shell;
         _executor = executor;
+        _folderPicker = folderPicker;
+        _settings = settings;
         _messenger = messenger;
         Tree = new FolderTreeViewModel(presenter);
         Table = new ItemTableViewModel(presenter);
@@ -77,6 +90,20 @@ public sealed partial class ExplorerViewModel : ObservableObject
     public StorageNode? SelectedNode => Table.Selected?.Node ?? CurrentFolder;
 
     public bool IsFolderMode => Mode == ExplorerMode.Folder;
+
+    /// <summary>The map only shows a folder; search results and largest files stay a list.</summary>
+    public bool IsMapVisible => ShowMap && IsFolderMode;
+
+    /// <summary>The other half of the list/map toggle.</summary>
+    public bool ShowList
+    {
+        get => !ShowMap;
+        set => ShowMap = !value;
+    }
+
+    public string FooterHint => ShowMap
+        ? "Tile colors show file types  ·  click to select, double-click to open"
+        : "Sizes are logical file sizes  ·  double-click a folder to open it";
 
     public bool CanGoUp => CurrentFolder?.Parent is not null;
 
@@ -221,6 +248,69 @@ public sealed partial class ExplorerViewModel : ObservableObject
     [RelayCommand]
     private Task RecycleCheckedAsync() => RecycleItemsAsync(Table.CheckedNodes);
 
+    /// <summary>Moves the one item a context menu was used on to a folder on another drive.</summary>
+    [RelayCommand]
+    private Task MoveAsync(StorageItemViewModel? item)
+    {
+        var target = item?.Node ?? Table.Selected?.Node;
+        return target is null ? Task.CompletedTask : MoveItemsAsync([target]);
+    }
+
+    /// <summary>Moves every ticked row (the selection bar's button).</summary>
+    [RelayCommand]
+    private Task MoveCheckedAsync() => MoveItemsAsync(Table.CheckedNodes);
+
+    /// <summary>Adds an item to the never-touch list, so it's never suggested for cleanup again.</summary>
+    [RelayCommand]
+    private void NeverClean(StorageItemViewModel? item)
+    {
+        var node = item?.Node ?? SelectedNode;
+        if (node is null)
+        {
+            return;
+        }
+
+        var excluded = _settings.Current.ExcludedFolders;
+        if (!excluded.Any(path => PathRules.IsSameOrInside(node.FullPath, path)))
+        {
+            _settings.Save(_settings.Current with { ExcludedFolders = [.. excluded, node.FullPath] });
+        }
+
+        _messenger.Send(new NotificationMessage(
+            $"SpaceLens won't suggest \"{node.Name}\" for cleanup anymore. Manage the list in Settings › Never-touch folders."));
+    }
+
+    /// <summary>A click on the map: items of this folder are selected; anything deeper opens its folder with it selected.</summary>
+    [RelayCommand]
+    private void SelectOnMap(StorageNode? node)
+    {
+        if (node?.Parent is not { } parent)
+        {
+            return;
+        }
+
+        if (!ReferenceEquals(parent, CurrentFolder))
+        {
+            NavigateTo(parent);
+        }
+
+        Table.Select(node);
+    }
+
+    /// <summary>A double-click on the map: folders open, files are shown in File Explorer.</summary>
+    [RelayCommand]
+    private void OpenOnMap(StorageNode? node)
+    {
+        if (node is FolderNode)
+        {
+            NavigateTo(node);
+        }
+        else if (node is not null)
+        {
+            RunShell(() => _shell.RevealInExplorer(node.FullPath));
+        }
+    }
+
     partial void OnSearchTextChanged(string value)
     {
         if (!_suppressSearch)
@@ -240,6 +330,52 @@ public sealed partial class ExplorerViewModel : ObservableObject
         if (!outcome.WasCancelled || outcome.RecycledCount > 0)
         {
             _messenger.Send(new NotificationMessage(outcome.Describe(), IsError: outcome.FailedCount > 0));
+        }
+    }
+
+    private async Task MoveItemsAsync(IReadOnlyList<StorageNode> targets)
+    {
+        if (targets.Count == 0)
+        {
+            return;
+        }
+
+        var destination = _folderPicker.PickFolder("Choose a folder on another drive to move the items to");
+        if (destination is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var outcome = await _executor.MoveAsync(targets, destination);
+            if (!outcome.WasCancelled || outcome.MovedCount > 0)
+            {
+                _messenger.Send(new NotificationMessage(outcome.Describe(), IsError: outcome.FailedCount > 0));
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            _messenger.Send(new NotificationMessage("The items couldn't be moved: " + exception.Message, IsError: true));
+        }
+    }
+
+    /// <summary>Lists the current view again, for example after cleanup risks changed.</summary>
+    public void RefreshListing()
+    {
+        switch (Mode)
+        {
+            case ExplorerMode.Folder when CurrentFolder is { } folder:
+                var selected = Table.Selected?.Node;
+                ShowFolderContents(folder);
+                Table.Select(selected);
+                break;
+            case ExplorerMode.LargestFiles:
+                _ = ShowLargestFilesAsync(CurrentFolder);
+                break;
+            case ExplorerMode.Search:
+                _ = SearchAsync(SearchText);
+                break;
         }
     }
 

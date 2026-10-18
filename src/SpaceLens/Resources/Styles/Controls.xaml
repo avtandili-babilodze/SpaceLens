@@ -225,11 +225,13 @@
                   BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}"
                   CornerRadius="10">
-            <Grid Margin="{TemplateBinding Padding}">
+            <!-- TextBox applies Padding to PART_ContentHost itself; only the placeholder needs it here -->
+            <Grid>
               <TextBlock x:Name="Placeholder"
                          Text="{TemplateBinding Tag}"
                          Foreground="{StaticResource TextTertiaryBrush}"
-                         Margin="2,0,0,0"
+                         Margin="{TemplateBinding Padding}"
+                         Padding="2,0,0,0"
                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                          TextTrimming="CharacterEllipsis"
                          IsHitTestVisible="False"
@@ -274,7 +276,7 @@
                   BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}"
                   CornerRadius="10">
-            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" />
+            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" />
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
@@ -709,7 +711,7 @@
                          VerticalAlignment="Center"
                          IsHitTestVisible="False"
                          Visibility="Collapsed" />
-              <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" />
+              <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" />
               <Border x:Name="Hint" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" Padding="8,4" CornerRadius="7" Background="#1A2737">
                 <TextBlock Text="Enter ↵ asks AI" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
               </Border>
@@ -755,7 +757,7 @@
                          VerticalAlignment="Center"
                          IsHitTestVisible="False"
                          Visibility="Collapsed" />
-              <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" />
+              <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" />
             </Grid>
           </Border>
           <ControlTemplate.Triggers>

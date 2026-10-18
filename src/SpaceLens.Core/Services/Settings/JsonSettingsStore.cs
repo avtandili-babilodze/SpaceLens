@@ -17,11 +17,11 @@ public sealed class JsonSettingsStore : ISettingsStore
         Current = Load();
     }
 
-    public AiSettings Current { get; private set; }
+    public AppSettings Current { get; private set; }
 
     public event EventHandler? Changed;
 
-    public void Save(AiSettings settings)
+    public void Save(AppSettings settings)
     {
         var temporaryPath = _paths.SettingsPath + ".tmp";
         File.WriteAllText(temporaryPath, JsonSerializer.Serialize(settings, Options));
@@ -30,17 +30,17 @@ public sealed class JsonSettingsStore : ISettingsStore
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    private AiSettings Load()
+    private AppSettings Load()
     {
         try
         {
             return File.Exists(_paths.SettingsPath)
-                ? JsonSerializer.Deserialize<AiSettings>(File.ReadAllText(_paths.SettingsPath)) ?? new AiSettings()
-                : new AiSettings();
+                ? JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(_paths.SettingsPath)) ?? new AppSettings()
+                : new AppSettings();
         }
         catch (Exception exception) when (exception is IOException or JsonException or UnauthorizedAccessException)
         {
-            return new AiSettings();
+            return new AppSettings();
         }
     }
 }

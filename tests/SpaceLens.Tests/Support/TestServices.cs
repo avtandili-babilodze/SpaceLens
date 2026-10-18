@@ -31,8 +31,21 @@ public static class TestServices
         return session;
     }
 
-    public static CleanupExecutor Executor(IScanSession session, IRecycleBinService recycleBin, IConfirmationService confirmation) =>
-        new(TestData.RiskAnalyzer, recycleBin, confirmation, session, NullLogger<CleanupExecutor>.Instance);
+    public static CleanupExecutor Executor(
+        IScanSession session,
+        IRecycleBinService recycleBin,
+        IConfirmationService confirmation,
+        ICleanupLog? log = null) =>
+        new(
+            TestData.RiskAnalyzer,
+            recycleBin,
+            new ShellFileMover(),
+            new DriveService(),
+            confirmation,
+            session,
+            log ?? new MemoryCleanupLog(),
+            TestData.Clock,
+            NullLogger<CleanupExecutor>.Instance);
 
     public static NodePresenter Presenter { get; } = new(TestData.Locations, TestData.RiskAnalyzer);
 
@@ -43,7 +56,7 @@ public static class TestServices
         ISettingsStore? settings = null)
     {
         var client = AnthropicClient(handler, credentials);
-        var toolbox = new StorageToolbox(session, TestData.RiskAnalyzer, new CleanupPlanner());
+        var toolbox = new StorageToolbox(session, TestData.RiskAnalyzer, new CleanupPlanner(), new NoInstalledApps(), TestData.Clock);
         var context = new AiContextBuilder(session, TestData.RiskAnalyzer);
         return new ClaudeHaikuService(client, context, toolbox, settings ?? new MemorySettingsStore());
     }

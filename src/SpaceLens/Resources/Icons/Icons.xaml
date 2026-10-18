@@ -76,6 +76,8 @@
   <!-- Summary card artwork (24 x 24 strokes) -->
   <Geometry x:Key="LeafGeometry">M20,3.5 C11,3.5 4.5,8.5 4.5,15.5 C4.5,17.6 5.2,19.4 6.4,20.6 C13.5,20.6 20,15 20,3.5 Z M6.4,20.6 C9,15.5 12.5,12 16,10</Geometry>
   <Geometry x:Key="TrendGeometry">M3,17 L9,11 L13,15 L21,7 M15,7 L21,7 L21,13</Geometry>
+  <!-- AI assistant mark: a large and a small sparkle, drawn filled -->
+  <Geometry x:Key="SparkleGeometry">M10,4 Q11,11 18,12 Q11,13 10,20 Q9,13 2,12 Q9,11 10,4 Z M19,1.5 Q19.4,4.6 22.5,5 Q19.4,5.4 19,8.5 Q18.6,5.4 15.5,5 Q18.6,4.6 19,1.5 Z</Geometry>
   <Geometry x:Key="FileGeometry">M7,3 L14,3 L19,8 L19,20 C19,20.55 18.55,21 18,21 L7,21 C6.45,21 6,20.55 6,20 L6,4 C6,3.45 6.45,3 7,3 Z M14,3 L14,8 L19,8</Geometry>
 
 </ResourceDictionary>

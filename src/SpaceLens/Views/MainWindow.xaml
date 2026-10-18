@@ -14,8 +14,8 @@
         Height="960"
         MinWidth="1080"
         MinHeight="700"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
+        WindowStartupLocation="Manual"
+        WindowStyle="SingleBorderWindow"
         ResizeMode="CanResize"
         Background="{StaticResource WindowBrush}"
         Foreground="{StaticResource TextBrush}"
@@ -27,6 +27,7 @@
         StateChanged="OnStateChanged"
         SizeChanged="OnSizeChanged">
 
+  <!-- Restored, the window keeps a (hidden) system frame for resizing and snapping; maximized it goes full screen (see MainWindow.xaml.cs) -->
   <shell:WindowChrome.WindowChrome>
     <shell:WindowChrome CaptionHeight="52" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
   </shell:WindowChrome.WindowChrome>
@@ -175,6 +176,12 @@
                              Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVisibility}, ConverterParameter=Compare}" />
           <views:DuplicatesView DataContext="{Binding Duplicates}"
                                 Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVisibility}, ConverterParameter=Duplicates}" />
+          <views:AppsView DataContext="{Binding Apps}"
+                          Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVisibility}, ConverterParameter=Apps}" />
+          <views:SystemSpaceView DataContext="{Binding SystemSpace}"
+                                 Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVisibility}, ConverterParameter=SystemSpace}" />
+          <views:HistoryView DataContext="{Binding History}"
+                             Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVisibility}, ConverterParameter=History}" />
           <views:SettingsView DataContext="{Binding Settings}"
                               Visibility="{Binding DataContext.CurrentPage, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqualsToVisibility}, ConverterParameter=Settings}" />
 
@@ -223,13 +230,13 @@
 
       <!-- Right column: details and assistant -->
       <Grid x:Name="RightPanel" Grid.Column="2" Margin="0,48,16,0">
-        <!-- Details and assistant share the column like the reference (about 60/40); a collapsed assistant gives its space back. -->
+        <!-- Details and assistant share the column, the assistant taking the larger part (about 40/60); a collapsed assistant gives its space back. -->
         <Grid.RowDefinitions>
-          <RowDefinition Height="1.5*" />
+          <RowDefinition Height="*" />
           <RowDefinition>
             <RowDefinition.Style>
               <Style TargetType="RowDefinition">
-                <Setter Property="Height" Value="*" />
+                <Setter Property="Height" Value="1.5*" />
                 <Style.Triggers>
                   <DataTrigger Binding="{Binding Assistant.IsExpanded}" Value="False">
                     <Setter Property="Height" Value="Auto" />
@@ -248,7 +255,7 @@
           <views:AssistantView.Style>
             <Style TargetType="views:AssistantView">
               <Setter Property="Grid.Row" Value="1" />
-              <Setter Property="MinHeight" Value="230" />
+              <Setter Property="MinHeight" Value="320" />
               <Style.Triggers>
                 <DataTrigger Binding="{Binding DataContext.ShowDetails, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
                   <Setter Property="Grid.Row" Value="0" />
@@ -273,7 +280,7 @@
                 Padding="16,10"
                 Visibility="{Binding Assistant.IsOpen, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
           <StackPanel Orientation="Horizontal">
-            <TextBlock Text="&#xE99A;" Style="{StaticResource Text.Glyph}" />
+            <Path Data="{StaticResource SparkleGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" />
             <TextBlock Text="Ask AI" Margin="8,0,0,0" />
           </StackPanel>
         </Button>
